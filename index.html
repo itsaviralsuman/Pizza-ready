@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <link rel="stylesheet" href="style.css?v=3.1">
+</head>
+<body>
+    <div id="game-container">
+        <canvas id="webgl-canvas"></canvas>
+
+        <!-- TOP HUD -->
+        <div id="hud">
+            <div class="hud-left">
+                <!-- MONEY BADGE -->
+                <div class="pill-badge" id="money-badge">
+                    <div class="badge-icon-circle coin-icon">$</div>
+                    <span class="badge-text" id="money-display">0</span>
+                </div>
+
+                <!-- PIZZA STACK BADGE -->
+                <div class="pill-badge" id="pizza-badge">
+                    <div class="badge-icon-circle pizza-icon">🍕</div>
+                    <span class="badge-text" id="pizza-display">0 / 6</span>
+                </div>
+
+                <!-- WHEAT CROP BADGE -->
+                <div class="pill-badge" id="wheat-badge">
+                    <div class="badge-icon-circle wheat-icon">🌾</div>
+                    <span class="badge-text" id="wheat-display">0 / 8</span>
+                </div>
+
+                <!-- FLOUR BAG BADGE -->
+                <div class="pill-badge" id="flour-badge">
+                    <div class="badge-icon-circle flour-icon">🍚</div>
+                    <span class="badge-text" id="flour-display">0 / 6</span>
+                </div>
+
+                <!-- DOUGH BASE BADGE -->
+                <div class="pill-badge" id="dough-badge">
+                    <div class="badge-icon-circle dough-icon">🥞</div>
+                    <span class="badge-text" id="dough-display">0 / 4</span>
+                </div>
+
+                <!-- TRASH INVENTORY BADGE (SHOWN WHEN CARRYING DIRTY DISHES) -->
+                <div class="pill-badge hidden" id="trash-badge">
+                    <div class="badge-icon-circle trash-icon">🗑️</div>
+                    <span class="badge-text" id="trash-display">0 / 4</span>
+                </div>
+
+                <!-- SODA DRINK BADGE -->
+                <div class="pill-badge hidden" id="drink-badge">
+                    <div class="badge-icon-circle drink-icon">🥤</div>
+                    <span class="badge-text" id="drink-display">0 / 3</span>
+                </div>
+            </div>
+
+            <!-- LEVEL BAR & OBJECTIVE -->
+            <div class="hud-center">
+                <div class="level-bar-container">
+                    <div class="level-bar-fill" id="level-fill" style="width: 10%;"></div>
+                    <span class="level-bar-text" id="level-text">LEVEL 1</span>
+                </div>
+                <div class="quest-banner" id="quest-banner">
+                    <span class="quest-icon">🎯</span>
+                    <span class="quest-text" id="quest-text">Serve customers at front counter</span>
+                </div>
+            </div>
+
+            <!-- RIGHT ACTION BUTTONS: CLOUD SAVE, UPGRADES, FPS, SETTINGS -->
+            <div class="hud-right">
+                <!-- EMAIL CLOUD SAVE BUTTON -->
+                <button class="pill-badge cloud-btn" id="cloud-save-btn" title="Cloud Save & Sync with Email">
+                    <div class="badge-icon-circle cloud-icon">☁️</div>
+                    <span class="badge-text" id="cloud-status-badge">Save Email</span>
+                    <span class="sync-dot" id="sync-dot"></span>
+                </button>
+
+                <!-- HR UPGRADES BUTTON -->
+                <button class="pill-badge hr-btn" id="hr-btn" title="Restaurant & Player Upgrades">
+                    <div class="badge-icon-circle hr-icon">⭐</div>
+                    <span class="badge-text">Upgrades</span>
+                </button>
+
+                <!-- FPS DISPLAY -->
+                <div class="pill-badge" id="fps-badge" title="Performance Mode / FPS">
+                    <div class="badge-icon-circle fps-icon">⚡</div>
+                    <span class="badge-text" id="fps-display">60 FPS</span>
+                </div>
+
+                <!-- SETTINGS GEAR -->
+                <button class="settings-btn" id="settings-btn" aria-label="Settings">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- 2D FLOATING UI OVERLAY (FOR LABELS, ARROWS, BUBBLES, TRASH ICONS) -->
+        <div id="floating-ui-container"></div>
+
+        <!-- VIRTUAL JOYSTICK -->
+        <div id="joystick-zone">
+            <div class="joystick-base" id="joystick-base">
+                <div class="joystick-thumb" id="joystick-thumb"></div>
+            </div>
+        </div>
+
+        <!-- DESKTOP HINT -->
+        <div class="desktop-controls-hint">
+            <span class="key-badge">W</span>
+            <span class="key-badge">A</span>
+            <span class="key-badge">S</span>
+            <span class="key-badge">D</span>
+            <span>or Drag Joystick to Move</span>
+        </div>
+
+        <!-- NOTIFICATION TOAST NOTIFIER -->
+        <div id="toast-container"></div>
+
+        <!-- ============================================== -->
+        <!-- EMAIL CLOUD SAVE & RESTORE MODAL -->
+        <!-- ============================================== -->
+        <div class="modal-overlay" id="cloud-modal">
+            <div class="modal-box cloud-box">
+                <div class="modal-header">
+                    <h2 class="modal-title">☁️ Email Cloud Save & Sync</h2>
+                    <button class="modal-close-icon" id="close-cloud-x">&times;</button>
+                </div>
+                
+                <div class="cloud-info-card">
+                    <div class="cloud-avatar">👤</div>
+                    <div class="cloud-details">
+                        <div class="cloud-status-title" id="cloud-account-email">Guest Player</div>
+                        <div class="cloud-status-sub" id="cloud-sync-status">Progress saved locally in browser</div>
+                    </div>
+                </div>
+
+                <div class="cloud-input-group">
+                    <label class="cloud-label" for="cloud-email-input">Your Email ID (For Permanent Cloud Restore):</label>
+                    <div class="input-with-button">
+                        <input type="email" id="cloud-email-input" placeholder="e.g. yourname@gmail.com" autocomplete="email">
+                        <button class="modal-btn btn-primary btn-inline" id="btn-save-email">Save & Link</button>
+                    </div>
+                    <div class="cloud-subtext">✨ Entering your email ensures that even if you delete or change your browser/device, typing this email will restore 100% of your coins, tables & upgrades!</div>
+                </div>
+
+                <div class="cloud-actions-row">
+                    <button class="modal-btn btn-success" id="btn-manual-sync">
+                        <span>☁️ Force Cloud Sync</span>
+                    </button>
+                    <button class="modal-btn btn-secondary" id="btn-restore-email">
+                        <span>📥 Restore by Email</span>
+                    </button>
+                </div>
+
+                <div class="backup-code-section">
+                    <div class="settings-section-title">📋 BACKUP SAVE CODE / EXPORT</div>
+                    <textarea id="save-code-box" placeholder="Your encrypted save code appears here..." readonly></textarea>
+                    <div class="backup-btn-row">
+                        <button class="small-action-btn" id="btn-generate-code">📋 Copy Save Code</button>
+                        <button class="small-action-btn" id="btn-import-code">📥 Import From Code</button>
+                    </div>
+                </div>
+
+                <button class="modal-btn btn-secondary full-width" id="close-cloud-btn">Back to Game</button>
+            </div>
+        </div>
+
+        <!-- ============================================== -->
+        <!-- HR / RESTAURANT UPGRADES MODAL -->
+        <!-- ============================================== -->
+        <div class="modal-overlay" id="upgrades-modal">
+            <div class="modal-box upgrades-box">
+                <div class="modal-header">
+                    <h2 class="modal-title">⭐ Restaurant Management (HR)</h2>
+                    <button class="modal-close-icon" id="close-upgrades-x">&times;</button>
+                </div>
+
+                <div class="upgrades-list">
+                    <!-- UPGRADE 1: PLAYER SPEED -->
+                    <div class="upgrade-card" id="card-upgrade-speed">
+                        <div class="upgrade-icon">🏃</div>
+                        <div class="upgrade-info">
+                            <div class="upgrade-name">Chef Speed</div>
+                            <div class="upgrade-level" id="upgrade-speed-level">Lv 1 / 10</div>
+                            <div class="upgrade-desc">Move faster around the kitchen</div>
+                        </div>
+                        <button class="upgrade-buy-btn" id="btn-upgrade-speed">
+                            <span class="buy-cost" id="cost-upgrade-speed">$85</span>
+                        </button>
+                    </div>
+
+                    <!-- UPGRADE 2: PIZZA CAPACITY -->
+                    <div class="upgrade-card" id="card-upgrade-capacity">
+                        <div class="upgrade-icon">📦</div>
+                        <div class="upgrade-info">
+                            <div class="upgrade-name">Pizza Box Stack</div>
+                            <div class="upgrade-level" id="upgrade-capacity-level">6 Boxes</div>
+                            <div class="upgrade-desc">Carry +2 more boxes at once</div>
+                        </div>
+                        <button class="upgrade-buy-btn" id="btn-upgrade-capacity">
+                            <span class="buy-cost" id="cost-upgrade-capacity">$100</span>
+                        </button>
+                    </div>
+
+                    <!-- UPGRADE 3: HIRE HELPER -->
+                    <div class="upgrade-card" id="card-upgrade-helper">
+                        <div class="upgrade-icon">👨‍🍳</div>
+                        <div class="upgrade-info">
+                            <div class="upgrade-name">Hire Worker / Helper</div>
+                            <div class="upgrade-level" id="upgrade-helper-level">0 Hired</div>
+                            <div class="upgrade-desc">Fetches pizzas & cleans dining tables</div>
+                        </div>
+                        <button class="upgrade-buy-btn" id="btn-upgrade-helper">
+                            <span class="buy-cost" id="cost-upgrade-helper">$250</span>
+                        </button>
+                    </div>
+
+                    <!-- UPGRADE 4: OVEN SPEED -->
+                    <div class="upgrade-card" id="card-upgrade-oven">
+                        <div class="upgrade-icon">🔥</div>
+                        <div class="upgrade-info">
+                            <div class="upgrade-name">Turbo Brick Oven</div>
+                            <div class="upgrade-level" id="upgrade-oven-level">Lv 1 / 8</div>
+                            <div class="upgrade-desc">Continuous automatic baking +30% faster</div>
+                        </div>
+                        <button class="upgrade-buy-btn" id="btn-upgrade-oven">
+                            <span class="buy-cost" id="cost-upgrade-oven">$80</span>
+                        </button>
+                    </div>
+
+                    <!-- UPGRADE 5: FLOUR MILL SPEED & CAPACITY -->
+                    <div class="upgrade-card" id="card-upgrade-mill">
+                        <div class="upgrade-icon">🏭</div>
+                        <div class="upgrade-info">
+                            <div class="upgrade-name">Turbo Flour Mill</div>
+                            <div class="upgrade-level" id="upgrade-mill-level">Lv 1 / 8</div>
+                            <div class="upgrade-desc">Grinds wheat into flour +40% faster</div>
+                        </div>
+                        <button class="upgrade-buy-btn" id="btn-upgrade-mill">
+                            <span class="buy-cost" id="cost-upgrade-mill">$90</span>
+                        </button>
+                    </div>
+
+                    <!-- UPGRADE 6: DOUGH PRESS SPEED & CAPACITY -->
+                    <div class="upgrade-card" id="card-upgrade-press">
+                        <div class="upgrade-icon">🥞</div>
+                        <div class="upgrade-info">
+                            <div class="upgrade-name">Turbo Dough Press</div>
+                            <div class="upgrade-level" id="upgrade-press-level">Lv 1 / 8</div>
+                            <div class="upgrade-desc">Stamps dough discs +40% faster</div>
+                        </div>
+                        <button class="upgrade-buy-btn" id="btn-upgrade-press">
+                            <span class="buy-cost" id="cost-upgrade-press">$90</span>
+                        </button>
+                    </div>
+
+                    <!-- UPGRADE 7: WHEAT FARM GROWTH & YIELD -->
+                    <div class="upgrade-card" id="card-upgrade-farm">
+                        <div class="upgrade-icon">🌾</div>
+                        <div class="upgrade-info">
+                            <div class="upgrade-name">Wheat Farm Yield</div>
+                            <div class="upgrade-level" id="upgrade-farm-level">Lv 1 / 5</div>
+                            <div class="upgrade-desc">Crops regrow +50% faster + high yield</div>
+                        </div>
+                        <button class="upgrade-buy-btn" id="btn-upgrade-farm">
+                            <span class="buy-cost" id="cost-upgrade-farm">$100</span>
+                        </button>
+                    </div>
+
+                    <!-- UPGRADE 8: HIRE CASHIER -->
+                    <div class="upgrade-card" id="card-upgrade-cashier">
+                        <div class="upgrade-icon">💼</div>
+                        <div class="upgrade-info">
+                            <div class="upgrade-name">Front Cashier</div>
+                            <div class="upgrade-level" id="upgrade-cashier-level">Not Hired</div>
+                            <div class="upgrade-desc">Automates front counter service</div>
+                        </div>
+                        <button class="upgrade-buy-btn" id="btn-upgrade-cashier">
+                            <span class="buy-cost" id="cost-upgrade-cashier">$350</span>
+                        </button>
+                    </div>
+                </div>
+
+                <button class="modal-btn btn-secondary full-width" id="close-upgrades-btn">Back to Game</button>
+            </div>
+        </div>
+
+        <!-- ============================================== -->
+        <!-- SETTINGS MODAL -->
+        <!-- ============================================== -->
+        <div class="modal-overlay" id="settings-modal">
+            <div class="modal-box">
+                <div class="modal-header">
+                    <h2 class="modal-title">🍕 Tycoon Settings</h2>
+                    <button class="modal-close-icon" id="close-settings-x">&times;</button>
+                </div>
+
+                <!-- GRAPHICS QUALITY SELECTOR -->
+                <div class="settings-section">
+                    <div class="settings-section-title">⚡ GRAPHICS PERFORMANCE</div>
+                    <div class="quality-selector">
+                        <button class="quality-btn" id="quality-fast-btn" type="button">🚀 Fast (Smooth)</button>
+                        <button class="quality-btn active" id="quality-balanced-btn" type="button">⚡ Balanced</button>
+                        <button class="quality-btn" id="quality-high-btn" type="button">💎 High</button>
+                    </div>
+                    <div class="quality-hint" id="quality-hint">Optimized 60 FPS for smooth laptop play</div>
+                </div>
+
+                <button class="modal-btn btn-primary" id="toggle-sound-btn">🔊 Sound: ON</button>
+                <button class="modal-btn btn-danger" id="reset-game-btn">🔄 Reset Current Game</button>
+                <button class="modal-btn btn-secondary" id="close-settings-btn">Back to Game</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRIPTS -->
+    <script src="three.min.js"></script>
+    <script src="audio.js?v=3.2"></script>
+    <script src="game.js?v=3.2"></script>
+    <div style="position:fixed;bottom:8px;right:8px;background:rgba(0,0,0,0.65);color:#22c55e;padding:3px 8px;border-radius:6px;font-size:11px;font-weight:700;font-family:sans-serif;z-index:99999;pointer-events:none;border:1px solid rgba(255,255,255,0.2);">🎮 v3.2 Balanced Tycoon & Fixed Zones</div>
+</body>
+</html>
