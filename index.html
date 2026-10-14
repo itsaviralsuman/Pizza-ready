@@ -85,6 +85,12 @@
                     <span class="badge-text">Upgrades</span>
                 </button>
 
+                <!-- FRANCHISE EMPIRE HUB BUTTON -->
+                <button class="pill-badge franchise-btn" id="franchise-btn" title="Pizza Empire Franchise Hub">
+                    <div class="badge-icon-circle franchise-icon">🚌</div>
+                    <span class="badge-text">Franchise</span>
+                </button>
+
                 <!-- FPS DISPLAY -->
                 <div class="pill-badge" id="fps-badge" title="Performance Mode / FPS">
                     <div class="badge-icon-circle fps-icon">⚡</div>
@@ -208,20 +214,46 @@
                         </button>
                     </div>
 
-                    <!-- UPGRADE 3: HIRE HELPER -->
-                    <div class="upgrade-card" id="card-upgrade-helper">
+                    <!-- UPGRADE 3: HIRE KITCHEN CHEF -->
+                    <div class="upgrade-card" id="card-upgrade-chef">
                         <div class="upgrade-icon">👨‍🍳</div>
                         <div class="upgrade-info">
-                            <div class="upgrade-name">Hire Worker / Helper</div>
-                            <div class="upgrade-level" id="upgrade-helper-level">0 Hired</div>
-                            <div class="upgrade-desc">Fetches pizzas & cleans dining tables</div>
+                            <div class="upgrade-name">Kitchen Chef Helper</div>
+                            <div class="upgrade-level" id="upgrade-chef-level">Not Hired</div>
+                            <div class="upgrade-desc">Rolls fresh dough & loads turbo oven continuously</div>
                         </div>
-                        <button class="upgrade-buy-btn" id="btn-upgrade-helper">
-                            <span class="buy-cost" id="cost-upgrade-helper">$250</span>
+                        <button class="upgrade-buy-btn" id="btn-upgrade-chef">
+                            <span class="buy-cost" id="cost-upgrade-chef">$150</span>
                         </button>
                     </div>
 
-                    <!-- UPGRADE 4: OVEN SPEED -->
+                    <!-- UPGRADE 4: HIRE COUNTER RUNNER -->
+                    <div class="upgrade-card" id="card-upgrade-runner">
+                        <div class="upgrade-icon">🏃</div>
+                        <div class="upgrade-info">
+                            <div class="upgrade-name">Counter Runner Helper</div>
+                            <div class="upgrade-level" id="upgrade-runner-level">Not Hired</div>
+                            <div class="upgrade-desc">Carries fresh baked boxes to Front Counter Shelf</div>
+                        </div>
+                        <button class="upgrade-buy-btn" id="btn-upgrade-runner">
+                            <span class="buy-cost" id="cost-upgrade-runner">$220</span>
+                        </button>
+                    </div>
+
+                    <!-- UPGRADE 5: HIRE WAITER -->
+                    <div class="upgrade-card" id="card-upgrade-waiter">
+                        <div class="upgrade-icon">🍽️</div>
+                        <div class="upgrade-info">
+                            <div class="upgrade-name">Dine-In Waiter Helper</div>
+                            <div class="upgrade-level" id="upgrade-waiter-level">0 Hired</div>
+                            <div class="upgrade-desc">Serves pizzas to dining tables & clears dirty plates</div>
+                        </div>
+                        <button class="upgrade-buy-btn" id="btn-upgrade-waiter">
+                            <span class="buy-cost" id="cost-upgrade-waiter">$280</span>
+                        </button>
+                    </div>
+
+                    <!-- UPGRADE 6: OVEN SPEED -->
                     <div class="upgrade-card" id="card-upgrade-oven">
                         <div class="upgrade-icon">🔥</div>
                         <div class="upgrade-info">
@@ -230,56 +262,17 @@
                             <div class="upgrade-desc">Continuous automatic baking +30% faster</div>
                         </div>
                         <button class="upgrade-buy-btn" id="btn-upgrade-oven">
-                            <span class="buy-cost" id="cost-upgrade-oven">$80</span>
+                            <span class="buy-cost" id="cost-upgrade-oven">$300</span>
                         </button>
                     </div>
 
-                    <!-- UPGRADE 5: FLOUR MILL SPEED & CAPACITY -->
-                    <div class="upgrade-card" id="card-upgrade-mill">
-                        <div class="upgrade-icon">🏭</div>
-                        <div class="upgrade-info">
-                            <div class="upgrade-name">Turbo Flour Mill</div>
-                            <div class="upgrade-level" id="upgrade-mill-level">Lv 1 / 8</div>
-                            <div class="upgrade-desc">Grinds wheat into flour +40% faster</div>
-                        </div>
-                        <button class="upgrade-buy-btn" id="btn-upgrade-mill">
-                            <span class="buy-cost" id="cost-upgrade-mill">$90</span>
-                        </button>
-                    </div>
-
-                    <!-- UPGRADE 6: DOUGH PRESS SPEED & CAPACITY -->
-                    <div class="upgrade-card" id="card-upgrade-press">
-                        <div class="upgrade-icon">🥞</div>
-                        <div class="upgrade-info">
-                            <div class="upgrade-name">Turbo Dough Press</div>
-                            <div class="upgrade-level" id="upgrade-press-level">Lv 1 / 8</div>
-                            <div class="upgrade-desc">Stamps dough discs +40% faster</div>
-                        </div>
-                        <button class="upgrade-buy-btn" id="btn-upgrade-press">
-                            <span class="buy-cost" id="cost-upgrade-press">$90</span>
-                        </button>
-                    </div>
-
-                    <!-- UPGRADE 7: WHEAT FARM GROWTH & YIELD -->
-                    <div class="upgrade-card" id="card-upgrade-farm">
-                        <div class="upgrade-icon">🌾</div>
-                        <div class="upgrade-info">
-                            <div class="upgrade-name">Wheat Farm Yield</div>
-                            <div class="upgrade-level" id="upgrade-farm-level">Lv 1 / 5</div>
-                            <div class="upgrade-desc">Crops regrow +50% faster + high yield</div>
-                        </div>
-                        <button class="upgrade-buy-btn" id="btn-upgrade-farm">
-                            <span class="buy-cost" id="cost-upgrade-farm">$100</span>
-                        </button>
-                    </div>
-
-                    <!-- UPGRADE 8: HIRE CASHIER -->
+                    <!-- UPGRADE 7: HIRE CASHIER -->
                     <div class="upgrade-card" id="card-upgrade-cashier">
                         <div class="upgrade-icon">💼</div>
                         <div class="upgrade-info">
                             <div class="upgrade-name">Front Cashier</div>
                             <div class="upgrade-level" id="upgrade-cashier-level">Not Hired</div>
-                            <div class="upgrade-desc">Automates front counter service</div>
+                            <div class="upgrade-desc">Serves counter queue using heated shelf pizzas</div>
                         </div>
                         <button class="upgrade-buy-btn" id="btn-upgrade-cashier">
                             <span class="buy-cost" id="cost-upgrade-cashier">$350</span>
@@ -288,6 +281,64 @@
                 </div>
 
                 <button class="modal-btn btn-secondary full-width" id="close-upgrades-btn">Back to Game</button>
+            </div>
+        </div>
+
+        <!-- ============================================== -->
+        <!-- FRANCHISE EMPIRE HUB MODAL -->
+        <!-- ============================================== -->
+        <div class="modal-overlay" id="franchise-modal">
+            <div class="modal-box franchise-box">
+                <div class="modal-header">
+                    <h2 class="modal-title">🚌 Pizza Empire Franchise Hub</h2>
+                    <button class="modal-close-icon" id="close-franchise-x">&times;</button>
+                </div>
+
+                <div class="cloud-info-card" style="margin-bottom: 14px;">
+                    <div class="cloud-avatar">👑</div>
+                    <div class="cloud-details">
+                        <div class="cloud-status-title" id="franchise-tier-title">Franchise Empire: Tier 1</div>
+                        <div class="cloud-status-sub" id="franchise-royalty-sub">Passive Empire Royalties: +$2 / 10s</div>
+                    </div>
+                </div>
+
+                <div class="franchise-branches-list">
+                    <!-- BRANCH 1: MAIN PIZZERIA -->
+                    <div class="branch-card active-branch">
+                        <div class="branch-info">
+                            <div class="branch-name">🍕 Branch #1: Downtown Slice Shop</div>
+                            <div class="branch-desc">Your flagship kitchen, brick oven & dine-in tables.</div>
+                            <div class="branch-status" style="color: #2b8a3e; font-weight: 800;">CURRENT LOCATION (Active)</div>
+                        </div>
+                        <button class="modal-btn btn-primary btn-inline" disabled style="opacity: 0.7;">Operating</button>
+                    </div>
+
+                    <!-- BRANCH 2: SEASIDE BOARDWALK -->
+                    <div class="branch-card" id="branch-2-card">
+                        <div class="branch-info">
+                            <div class="branch-name">🌊 Branch #2: Boardwalk Seaside Slice</div>
+                            <div class="branch-desc">+50% Higher Customer Volume & VIP Tourists (Req: Lv 8 + $1,500)</div>
+                            <div class="branch-status" id="branch-2-status" style="color: #e67700; font-weight: 800;">LOCKED (Goal: $1,500)</div>
+                        </div>
+                        <button class="modal-btn btn-success btn-inline" id="btn-unlock-branch-2">Unlock ($1,500)</button>
+                    </div>
+
+                    <!-- BRANCH 3: MEGA MALL -->
+                    <div class="branch-card" id="branch-3-card">
+                        <div class="branch-info">
+                            <div class="branch-name">🏙️ Branch #3: Metro Mall Food Court</div>
+                            <div class="branch-desc">2x Speed Cashiers, Delivery Fleet & Golden Oven (Req: Lv 15 + $3,500)</div>
+                            <div class="branch-status" id="branch-3-status" style="color: #868e96; font-weight: 800;">LOCKED (Goal: $3,500)</div>
+                        </div>
+                        <button class="modal-btn btn-secondary btn-inline" id="btn-unlock-branch-3" disabled>Locked</button>
+                    </div>
+                </div>
+
+                <div class="backup-btn-row" style="margin-top: 15px;">
+                    <button class="modal-btn btn-primary full-width" id="btn-collect-royalties">💰 Collect Royalties ($<span id="royalty-amount">0</span>)</button>
+                </div>
+
+                <button class="modal-btn btn-secondary full-width" id="close-franchise-btn" style="margin-top: 10px;">Back to Restaurant</button>
             </div>
         </div>
 

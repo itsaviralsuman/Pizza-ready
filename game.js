@@ -21,16 +21,17 @@
     'use strict';
 
     // =========================================================================
-    // 1. GAME STATE & STATS
+    // 1. GAME STATE & STATS (REBALANCED ECONOMY & EXPANDED EMPIRE)
     // =========================================================================
     const GameState = {
         email: '',
-        money: 25,
+        money: 10, // Humble beginning ($10 starting cash)
         level: 1,
         exp: 0,
-        expNeeded: 40,
+        expNeeded: 35,
+        pizzaBasePrice: 3, // $3 base price per pizza (low payout as requested)
         playerPizzas: 0,
-        playerMaxPizzas: 6,
+        playerMaxPizzas: 4,
         playerWheat: 0,
         playerMaxWheat: 8,
         playerFlour: 0,
@@ -41,7 +42,7 @@
         playerMaxTrash: 4,
         playerDrinks: 0,
         playerMaxDrinks: 3,
-        playerSpeed: 8.0,
+        playerSpeed: 7.8,
         ovenSpeedMultiplier: 1.0,
         millSpeedMultiplier: 1.0,
         pressSpeedMultiplier: 1.0,
@@ -57,17 +58,26 @@
         questProgress: 0,
         driveThruUnlocked: false,
         driveThruCarsServed: 0,
+        // Franchise Empire State
+        franchiseTier: 1,
+        franchiseRoyalties: 0,
+        branch2Unlocked: false,
+        branch3Unlocked: false,
         upgrades: {
             speedLevel: 1,
             capacityLevel: 1,
-            helperLevel: 0,
+            chefLevel: 0,   // Kitchen Chef helper (rolls dough & loads oven)
+            runnerLevel: 0, // Counter Runner helper (stocks heated shelf)
+            waiterLevel: 0, // Dine-in Waiter helper (serves tables & cleans plates)
             ovenLevel: 1,
-            millLevel: 1,
-            pressLevel: 1,
-            farmLevel: 1,
-            cashierLevel: 0
+            cashierLevel: 0 // Front Cashier (operates register)
         }
     };
+
+    function getPizzaPrice() {
+        // Base $3; every 10 levels price increases by only $1
+        return Math.max(3, 3 + Math.floor((GameState.level - 1) / 10));
+    }
 
     // --- SOUND FX ADAPTER ---
     const sound = window.soundFX || {
@@ -912,6 +922,97 @@
     }
 
     // =========================================================================
+    // 6C. 🚌 FRANCHISE TRANSIT BUS & METRO EXPEDITION TERMINAL
+    // =========================================================================
+    const FRANCHISE_BUS_ZONE_POS = new THREE.Vector3(28, 0, 38);
+    const franchiseBusGroup = new THREE.Group();
+    franchiseBusGroup.position.set(34, 0, 44);
+
+    // Bus Main Body
+    const busBodyMat = new THREE.MeshStandardMaterial({ color: 0xf59f00, roughness: 0.35, metalness: 0.1 });
+    const busChassis = new THREE.Mesh(new THREE.BoxGeometry(9.6, 3.8, 4.0), busBodyMat);
+    busChassis.position.y = 2.2;
+    busChassis.castShadow = true;
+    franchiseBusGroup.add(busChassis);
+
+    // Roof White Top
+    const busRoof = new THREE.Mesh(new THREE.BoxGeometry(9.2, 0.35, 3.8), new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.3 }));
+    busRoof.position.y = 4.2;
+    franchiseBusGroup.add(busRoof);
+
+    // Tinted Large Windows along sides
+    const busGlassMat = new THREE.MeshStandardMaterial({ color: 0x1971c2, roughness: 0.1, metalness: 0.7, transparent: true, opacity: 0.85 });
+    const sideWindowsL = new THREE.Mesh(new THREE.BoxGeometry(8.2, 1.3, 0.1), busGlassMat);
+    sideWindowsL.position.set(0, 2.8, 2.05);
+    franchiseBusGroup.add(sideWindowsL);
+
+    const sideWindowsR = new THREE.Mesh(new THREE.BoxGeometry(8.2, 1.3, 0.1), busGlassMat);
+    sideWindowsR.position.set(0, 2.8, -2.05);
+    franchiseBusGroup.add(sideWindowsR);
+
+    // Front Windshield
+    const frontWindshield = new THREE.Mesh(new THREE.BoxGeometry(0.1, 1.5, 3.6), busGlassMat);
+    frontWindshield.position.set(-4.85, 2.8, 0);
+    franchiseBusGroup.add(frontWindshield);
+
+    // Bus Heavy Wheels
+    const busWheelGeo = new THREE.CylinderGeometry(0.8, 0.8, 0.5, 16);
+    [
+        [-2.8, 0.8, 2.05], [0.5, 0.8, 2.05], [2.8, 0.8, 2.05],
+        [-2.8, 0.8, -2.05], [0.5, 0.8, -2.05], [2.8, 0.8, -2.05]
+    ].forEach(([wx, wy, wz]) => {
+        const tire = new THREE.Mesh(busWheelGeo, M.carTire);
+        tire.rotation.x = Math.PI / 2;
+        tire.position.set(wx, wy, wz);
+        franchiseBusGroup.add(tire);
+    });
+
+    // Destination LED Sign
+    const destSign = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.6, 0.15), new THREE.MeshBasicMaterial({ color: 0x111111 }));
+    destSign.position.set(-4.85, 3.8, 0);
+    franchiseBusGroup.add(destSign);
+
+    // Headlights
+    const busH1 = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.28, 0.15, 12), M.carHeadlight);
+    busH1.rotation.z = Math.PI / 2;
+    busH1.position.set(-4.85, 1.5, 1.2);
+    franchiseBusGroup.add(busH1);
+    const busH2 = busH1.clone();
+    busH2.position.set(-4.85, 1.5, -1.2);
+    franchiseBusGroup.add(busH2);
+
+    scene.add(franchiseBusGroup);
+    addBoxObstacle(29, 39, 41.5, 46.5);
+
+    // Interactive Franchise Transit Zone Pad on floor
+    const franchiseZoneGroup = new THREE.Group();
+    franchiseZoneGroup.position.copy(FRANCHISE_BUS_ZONE_POS);
+
+    const fZoneRing = new THREE.Mesh(
+        new THREE.RingGeometry(2.0, 2.4, 32),
+        new THREE.MeshBasicMaterial({ color: 0xffd43b, side: THREE.DoubleSide })
+    );
+    fZoneRing.rotation.x = -Math.PI / 2;
+    fZoneRing.position.y = 0.04;
+    franchiseZoneGroup.add(fZoneRing);
+
+    const fZoneCenter = new THREE.Mesh(
+        new THREE.CircleGeometry(2.0, 32),
+        new THREE.MeshBasicMaterial({ color: 0xfa5252, transparent: true, opacity: 0.35, side: THREE.DoubleSide })
+    );
+    fZoneCenter.rotation.x = -Math.PI / 2;
+    fZoneCenter.position.y = 0.03;
+    franchiseZoneGroup.add(fZoneCenter);
+
+    scene.add(franchiseZoneGroup);
+
+    // Floating 3D HTML Label over bus zone
+    const franchiseBusLabel = document.createElement('div');
+    franchiseBusLabel.className = 'worker-tag franchise-bus-tag';
+    franchiseBusLabel.innerHTML = '<span>🚌 FRANCHISE METRO EXPRESS</span><small>Step in to manage empire</small>';
+    floatingUI.appendChild(franchiseBusLabel);
+
+    // =========================================================================
     // 7. KITCHEN PREPARATION STATION (EXACT MATCH TO REFERENCE 1)
     // =========================================================================
     const prepCounterGroup = new THREE.Group();
@@ -1388,6 +1489,42 @@
     rollMesh.position.set(1.4, 3.7, -0.4);
     cashierGroup.add(rollMesh);
 
+    // --- FRONT COUNTER HEATED PIZZA DISPLAY SHELF ---
+    const counterPizzas = [];
+    const counterShelfGroup = new THREE.Group();
+    counterShelfGroup.position.set(-1.8, 2.5, 0); // Mounted on counter top
+
+    const shelfTray = new THREE.Mesh(new THREE.BoxGeometry(4.0, 0.15, 2.2), M.steel);
+    counterShelfGroup.add(shelfTray);
+
+    const shelfGlass = new THREE.Mesh(new THREE.BoxGeometry(4.1, 1.8, 2.3), new THREE.MeshStandardMaterial({
+        color: 0xffd8a8,
+        transparent: true,
+        opacity: 0.35,
+        roughness: 0.1
+    }));
+    shelfGlass.position.y = 0.9;
+    counterShelfGroup.add(shelfGlass);
+
+    const heatBar = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.1, 0.4), new THREE.MeshBasicMaterial({ color: 0xff922b }));
+    heatBar.position.y = 1.75;
+    counterShelfGroup.add(heatBar);
+    cashierGroup.add(counterShelfGroup);
+
+    const COUNTER_DROP_SPOT = new THREE.Vector3(15.0, 0, -3.4);
+    const COUNTER_SHELF_WORLD_POS = new THREE.Vector3(16.2, 2.5, 0);
+
+    const shelfTag = document.createElement('div');
+    shelfTag.className = 'floating-zone-tag';
+    shelfTag.innerHTML = '🔥 HOT PIZZA DISPLAY (<span id="shelf-pizza-count">0</span>/12)';
+    shelfTag.style.background = 'linear-gradient(135deg, #e8590c, #d9480f)';
+    floatingUI.appendChild(shelfTag);
+
+    function updateCounterShelfVisuals() {
+        const countEl = document.getElementById('shelf-pizza-count');
+        if (countEl) countEl.innerText = counterPizzas.length;
+    }
+
     scene.add(cashierGroup);
     addBoxObstacle(13.5, 22.5, -1.6, 1.6);
 
@@ -1402,7 +1539,7 @@
     const COUNTER_PLAYER_SPOT = new THREE.Vector3(18, 0, -3.8);
 
     // =========================================================================
-    // 10. CASH DROP PILE WITH GLOWING NEON AURA (REFERENCE 1)
+    // 10. CASH DROP PILE WITH GLOWING NEON AURA (ACCURATE DOLLAR PROGRESSION)
     // =========================================================================
     const CASH_DROP_POS = new THREE.Vector3(12, 0, 3.8);
 
@@ -1432,6 +1569,7 @@
     }
 
     let activeCashCount = 0;
+    let activeCashDollars = 0;
 
     function updateCashPileVisuals() {
         const visibleBundles = Math.min(activeCashCount, MAX_CASH_MESHES);
@@ -1440,11 +1578,12 @@
         }
     }
 
-    function addCashToPile(amount) {
-        activeCashCount += amount;
+    function addCashToPile(dollars) {
+        activeCashDollars += dollars;
+        // 1 visible mesh per $2-$3
+        activeCashCount = Math.min(MAX_CASH_MESHES, Math.max(1, Math.ceil(activeCashDollars / 2.5)));
         updateCashPileVisuals();
     }
-    addCashToPile(5);
 
     // =========================================================================
     // 11. 🗑️ RECYCLING DUMPSTER & SODA DISPENSER
@@ -1808,42 +1947,66 @@
     let nextHelperIndex = 1;
 
     // =========================================================================
-    // 15. HELPER WORKERS
+    // 15. DEDICATED HELPER WORKERS (CHEF, RUNNER, WAITER)
     // =========================================================================
     const helpers = [];
 
-    function spawnHelperWorker(index) {
-        if (helpers.length >= 2) return;
+    function spawnHelperWorker(role = 'WAITER') {
+        if (helpers.length >= 4) return;
 
-        const isFarmer = (helpers.length === 0);
+        let shirtColor = 0x20c997;
+        let apronColor = 0x1098ad;
+        let startPos = new THREE.Vector3(-4, 0, 4);
+        let tagText = '🍽️ WAITER';
+
+        if (role === 'CHEF') {
+            shirtColor = 0xff922b;
+            apronColor = 0xd9480f;
+            startPos = new THREE.Vector3(-18, 0, -28);
+            tagText = '👨‍🍳 KITCHEN CHEF';
+        } else if (role === 'RUNNER') {
+            shirtColor = 0x339af0;
+            apronColor = 0xfcc419;
+            startPos = new THREE.Vector3(-14, 0, -5);
+            tagText = '🏃 COUNTER RUNNER';
+        } else {
+            role = 'WAITER';
+            shirtColor = 0x51cf66;
+            apronColor = 0x2b8a3e;
+            startPos = new THREE.Vector3(-4, 0, 6);
+            tagText = '🍽️ DINE-IN WAITER';
+        }
+
         const h = createCharacterMesh({
-            shirtColor: isFarmer ? 0xf59f00 : 0x20c997,
+            shirtColor: shirtColor,
             pantsColor: 0x1864ab,
             hasApron: true,
-            apronColor: isFarmer ? 0x82c91e : 0x1098ad
+            apronColor: apronColor
         });
-        if (isFarmer) {
-            h.root.position.set(-18, 0, -34);
-        } else {
-            h.root.position.set(-4, 0, 4);
-        }
+        h.root.position.copy(startPos);
         scene.add(h.root);
 
         const helperTag = document.createElement('div');
         helperTag.className = 'floating-helper-tag';
-        helperTag.innerText = isFarmer ? '🌾 FARM HELPER' : '👨‍🍳 WAITER';
+        helperTag.innerText = tagText;
         floatingUI.appendChild(helperTag);
         h.tagEl = helperTag;
 
+        h.role = role;
         h.pizzas = 0;
         h.maxPizzas = 3;
-        h.wheat = 0;
         h.trash = 0;
-        h.state = 'FETCH_PIZZA';
-        h.speed = 4.8;
+        h.state = role === 'CHEF' ? 'PREP_PIZZA' : (role === 'RUNNER' ? 'FETCH_PIZZA' : 'SERVE');
+        h.speed = 4.6;
+        h.stuckTimer = 0;
+        h.lastPos = startPos.clone();
         helpers.push(h);
+
         GameState.helperCount = helpers.length;
-        GameState.upgrades.helperLevel = helpers.length;
+        if (role === 'CHEF') GameState.upgrades.chefLevel = 1;
+        if (role === 'RUNNER') GameState.upgrades.runnerLevel = 1;
+        if (role === 'WAITER') GameState.upgrades.waiterLevel = (GameState.upgrades.waiterLevel || 0) + 1;
+        updateUpgradesUI();
     }
 
     // =========================================================================
@@ -1856,7 +2019,7 @@
         {
             id: 'table_1',
             title: '🪑 Table 1',
-            price: 35,
+            price: 25,
             getPos: () => new THREE.Vector3(tableLocations[0].x, 0, tableLocations[0].z),
             onUnlock: () => {
                 diningTables.push(createDiningTable(1, tableLocations[0].x, tableLocations[0].z));
@@ -1866,23 +2029,21 @@
             }
         },
         {
-            id: 'oven_lv2',
-            title: '🔥 Oven Lv 2 (+30%)',
-            price: 60,
-            getPos: () => new THREE.Vector3(-12.5, 0, -4.8),
+            id: 'chef_1',
+            title: '👨‍🍳 Hire Kitchen Chef',
+            price: 75,
+            getPos: () => new THREE.Vector3(-18.0, 0, -22.0),
             onUnlock: () => {
-                GameState.upgrades.ovenLevel = Math.max(GameState.upgrades.ovenLevel || 1, 2);
-                GameState.ovenSpeedMultiplier = Math.max(GameState.ovenSpeedMultiplier, 1.3);
-                sound.playUpgrade();
-                showToast('🔥 Turbo Oven upgraded! Baking +30% faster!');
-                updateHUD();
-                updateUpgradesUI();
+                spawnHelperWorker('CHEF');
+                sound.playUnlock();
+                showToast('👨‍🍳 Kitchen Chef Hired! Dough rolling & baking automated!');
+                checkQuestTrigger('hire_helper');
             }
         },
         {
             id: 'table_2',
             title: '🪑 Table 2',
-            price: 85,
+            price: 120,
             getPos: () => new THREE.Vector3(tableLocations[1].x, 0, tableLocations[1].z),
             onUnlock: () => {
                 diningTables.push(createDiningTable(2, tableLocations[1].x, tableLocations[1].z));
@@ -1892,20 +2053,20 @@
             }
         },
         {
-            id: 'helper_1',
-            title: '👨‍🍳 Hire Waiter Helper',
-            price: 140,
+            id: 'runner_1',
+            title: '🏃 Counter Runner',
+            price: 180,
             getPos: () => new THREE.Vector3(0, 0, -4.0),
             onUnlock: () => {
-                spawnHelperWorker(1);
-                showToast('👨‍🍳 Waiter Helper hired! Running pizzas & cleaning tables!');
-                checkQuestTrigger('hire_helper');
+                spawnHelperWorker('RUNNER');
+                sound.playUnlock();
+                showToast('🏃 Counter Runner Hired! Hot pizza display kept stocked!');
             }
         },
         {
             id: 'table_3',
             title: '🪑 Table 3',
-            price: 120,
+            price: 220,
             getPos: () => new THREE.Vector3(tableLocations[2].x, 0, tableLocations[2].z),
             onUnlock: () => {
                 diningTables.push(createDiningTable(3, tableLocations[2].x, tableLocations[2].z));
@@ -1915,39 +2076,26 @@
             }
         },
         {
-            id: 'drive_thru',
-            title: '🚗 Drive-Thru Window',
-            price: 200,
-            getPos: () => new THREE.Vector3(-25.0, 0, -10.0),
-            onUnlock: () => {
-                GameState.driveThruUnlocked = true;
-                sound.playUnlock();
-                spawnDriveThruCar();
-                showToast('🚗 Drive-Thru Window OPENED! High-paying drive-thru orders!');
-                checkQuestTrigger('unlock_drive_thru');
-            }
-        },
-        {
             id: 'cashier_1',
             title: '💼 Hire Front Cashier',
-            price: 260,
+            price: 280,
             getPos: () => new THREE.Vector3(18.0, 0, -8.0),
             onUnlock: () => {
                 spawnCashierWorker();
                 sound.playUnlock();
-                showToast('💼 Cashier Hired! Front register counter automated!');
+                showToast('💼 Cashier Hired! Register automated from heated shelf!');
             }
         },
         {
-            id: 'oven_lv3',
-            title: '🔥 Oven Lv 3 (+30%)',
-            price: 220,
+            id: 'oven_lv2',
+            title: '🔥 Oven Lv 2 (+35%)',
+            price: 350,
             getPos: () => new THREE.Vector3(-12.5, 0, -4.8),
             onUnlock: () => {
-                GameState.upgrades.ovenLevel = Math.max(GameState.upgrades.ovenLevel || 1, 3);
-                GameState.ovenSpeedMultiplier += 0.3;
+                GameState.upgrades.ovenLevel = Math.max(GameState.upgrades.ovenLevel || 1, 2);
+                GameState.ovenSpeedMultiplier = Math.max(GameState.ovenSpeedMultiplier, 1.35);
                 sound.playUpgrade();
-                showToast('🔥 Turbo Oven Lv 3! Rapid fire baking!');
+                showToast('🔥 Turbo Oven upgraded! Baking +35% faster!');
                 updateHUD();
                 updateUpgradesUI();
             }
@@ -1955,7 +2103,7 @@
         {
             id: 'table_4',
             title: '🪑 Table 4',
-            price: 160,
+            price: 380,
             getPos: () => new THREE.Vector3(tableLocations[3].x, 0, tableLocations[3].z),
             onUnlock: () => {
                 diningTables.push(createDiningTable(4, tableLocations[3].x, tableLocations[3].z));
@@ -1965,59 +2113,33 @@
             }
         },
         {
-            id: 'helper_2',
-            title: '👨‍🍳 Hire 2nd Waiter',
-            price: 300,
-            getPos: () => new THREE.Vector3(0, 0, 4.0),
+            id: 'waiter_1',
+            title: '🍽️ Hire Waiter Helper',
+            price: 450,
+            getPos: () => new THREE.Vector3(-4.0, 0, 4.0),
             onUnlock: () => {
-                spawnHelperWorker(2);
-                showToast('👨‍🍳 2nd Waiter hired! Pizzeria is running at full power!');
-            }
-        },
-        {
-            id: 'farm_mill_expansion',
-            title: '🌾 Unlock Farm & Factory',
-            price: 380,
-            getPos: () => new THREE.Vector3(-8.0, 0, -25.0),
-            onUnlock: () => {
-                GameState.farmExpanded = true;
-                setFarmFactoryVisibility(true);
-                showToast('🌾 Supply Farm & Factory UNLOCKED! Harvest crops & grind flour!');
+                spawnHelperWorker('WAITER');
                 sound.playUnlock();
+                showToast('🍽️ Waiter Hired! Running pizzas & cleaning tables!');
             }
         },
         {
-            id: 'mill_lv2',
-            title: '🏭 Turbo Flour Mill (+50%)',
-            price: 260,
-            getPos: () => new THREE.Vector3(-6.0, 0, -28.0),
+            id: 'drive_thru',
+            title: '🚗 Drive-Thru Window',
+            price: 600,
+            getPos: () => new THREE.Vector3(-25.0, 0, -10.0),
             onUnlock: () => {
-                GameState.upgrades.millLevel = Math.max(GameState.upgrades.millLevel || 1, 2);
-                GameState.millSpeedMultiplier = (GameState.millSpeedMultiplier || 1.0) + 0.5;
-                sound.playUpgrade();
-                showToast('🏭 Flour Mill grinding +50% faster!');
-                updateHUD();
-                updateUpgradesUI();
-            }
-        },
-        {
-            id: 'press_lv2',
-            title: '🥞 Turbo Dough Press (+50%)',
-            price: 280,
-            getPos: () => new THREE.Vector3(2.0, 0, -28.0),
-            onUnlock: () => {
-                GameState.upgrades.pressLevel = Math.max(GameState.upgrades.pressLevel || 1, 2);
-                GameState.pressSpeedMultiplier = (GameState.pressSpeedMultiplier || 1.0) + 0.5;
-                sound.playUpgrade();
-                showToast('🥞 Dough Press stamping +50% faster!');
-                updateHUD();
-                updateUpgradesUI();
+                GameState.driveThruUnlocked = true;
+                sound.playUnlock();
+                spawnDriveThruCar();
+                showToast('🚗 Drive-Thru Window OPENED! High-paying car orders!');
+                checkQuestTrigger('unlock_drive_thru');
             }
         },
         {
             id: 'table_5',
             title: '🪑 Table 5',
-            price: 220,
+            price: 650,
             getPos: () => new THREE.Vector3(tableLocations[4].x, 0, tableLocations[4].z),
             onUnlock: () => {
                 diningTables.push(createDiningTable(5, tableLocations[4].x, tableLocations[4].z));
@@ -2026,14 +2148,15 @@
             }
         },
         {
-            id: 'table_6',
-            title: '🪑 Table 6',
-            price: 260,
-            getPos: () => new THREE.Vector3(tableLocations[5].x, 0, tableLocations[5].z),
+            id: 'franchise_hub',
+            title: '🚌 Franchise Transit & Branch 2',
+            price: 1500,
+            getPos: () => new THREE.Vector3(-30.0, 0, 24.0),
             onUnlock: () => {
-                diningTables.push(createDiningTable(6, tableLocations[5].x, tableLocations[5].z));
-                nextTableIndex = Math.max(nextTableIndex, 6);
-                showToast('🎉 Table 6 Unlocked!');
+                GameState.branch2Unlocked = true;
+                GameState.franchiseTier = 2;
+                sound.playUnlock();
+                showToast('🚌 FRANCHISE EXPANSION UNLOCKED! Branch #2 Boardwalk Active!');
             }
         }
     ];
@@ -2182,17 +2305,13 @@
         updateHUD();
     }
 
-    function spawnInitialReadyPizzas() {
-        while (readyPizzas.length < 5) {
-            const stackBox = createPizzaBoxMesh();
-            const stackHeight = (readyPizzas.length % 8) * 0.42 + 1.6;
-            const col = Math.floor(readyPizzas.length / 8);
-            stackBox.position.set(-18 + (col === 0 ? -0.8 : 0.8), stackHeight, -4.8);
-            scene.add(stackBox);
-            readyPizzas.push(stackBox);
-        }
-    }
-    spawnInitialReadyPizzas();
+    let prepTimer = 0;
+    const PREP_STATION_POS = new THREE.Vector3(-18.0, 0, -28.0);
+    const prepStationTag = document.createElement('div');
+    prepStationTag.className = 'floating-zone-tag';
+    prepStationTag.innerHTML = '👨‍🍳 DOUGH & PREP (<span id="prep-status">Stand Here to Roll</span>)';
+    prepStationTag.style.background = 'linear-gradient(135deg, #f59f00, #f08c00)';
+    floatingUI.appendChild(prepStationTag);
 
     function updatePlayerCarryVisuals(charObj) {
         if (!charObj || !charObj.stackContainer) return;
@@ -2326,8 +2445,21 @@
         if (servedCust) {
             servedCust.waitingAtCounter = false;
             servedCust.hasReceivedPizza = true;
-            servedCust.bubbleEl.style.display = 'none';
+            servedCust.bubbleEl.innerHTML = '<span>😋 🍕</span>';
+            servedCust.bubbleEl.style.display = 'flex';
             servedCust.state = 'FINISH_AND_LEAVE';
+
+            // Customer physically holds their pizza box!
+            if (servedCust.mesh && servedCust.mesh.stackContainer) {
+                while (servedCust.mesh.stackContainer.children.length > 0) {
+                    servedCust.mesh.stackContainer.remove(servedCust.mesh.stackContainer.children[0]);
+                }
+                const cBox = createPizzaBoxMesh();
+                cBox.position.set(0, 0, 0);
+                servedCust.mesh.stackContainer.add(cBox);
+                if (servedCust.mesh.leftArm) servedCust.mesh.leftArm.rotation.x = -Math.PI / 3;
+                if (servedCust.mesh.rightArm) servedCust.mesh.rightArm.rotation.x = -Math.PI / 3;
+            }
         }
 
         // Strictly re-sequence waiting queue from 0 to N-1
@@ -2336,6 +2468,7 @@
             waiting[idx].queueIndex = idx;
             if (idx === 0) {
                 waiting[idx].bubbleEl.style.display = 'flex';
+                waiting[idx].bubbleEl.innerHTML = waiting[idx].wantsDrink ? '<span>🍕🥤</span>' : '<span>🍕</span>';
             } else {
                 waiting[idx].bubbleEl.style.display = 'none';
             }
@@ -2603,6 +2736,10 @@
                 helpersUnlocked: helpers.length,
                 driveThruUnlocked: GameState.driveThruUnlocked,
                 driveThruCarsServed: GameState.driveThruCarsServed,
+                franchiseTier: GameState.franchiseTier || 1,
+                franchiseRoyalties: GameState.franchiseRoyalties || 0,
+                branch2Unlocked: GameState.branch2Unlocked || false,
+                branch3Unlocked: GameState.branch3Unlocked || false,
                 upgrades: GameState.upgrades,
                 timestamp: Date.now()
             };
@@ -2638,9 +2775,9 @@
                 GameState.money = data.money !== undefined ? data.money : GameState.money;
                 GameState.level = data.level || 1;
                 GameState.exp = data.exp || 0;
-                GameState.expNeeded = data.expNeeded || 40;
-                GameState.playerMaxPizzas = data.playerMaxPizzas || 6;
-                GameState.playerSpeed = data.playerSpeed || 8.0;
+                GameState.expNeeded = data.expNeeded || 35;
+                GameState.playerMaxPizzas = data.playerMaxPizzas || 4;
+                GameState.playerSpeed = data.playerSpeed || 7.8;
                 GameState.ovenSpeedMultiplier = data.ovenSpeedMultiplier || 1.0;
                 GameState.totalCustomersServed = data.totalCustomersServed || 0;
                 GameState.totalTablesCleaned = data.totalTablesCleaned || 0;
@@ -2650,6 +2787,11 @@
                     GameState.milestoneIndex = data.milestoneIndex;
                 }
                 if (data.upgrades) GameState.upgrades = Object.assign(GameState.upgrades, data.upgrades);
+                if (data.franchiseTier) GameState.franchiseTier = data.franchiseTier;
+                if (data.franchiseRoyalties) GameState.franchiseRoyalties = data.franchiseRoyalties;
+                if (data.branch2Unlocked) GameState.branch2Unlocked = data.branch2Unlocked;
+                if (data.branch3Unlocked) GameState.branch3Unlocked = data.branch3Unlocked;
+
                 if (data.driveThruUnlocked !== undefined) {
                     GameState.driveThruUnlocked = data.driveThruUnlocked;
                     if (GameState.driveThruUnlocked) spawnDriveThruCar();
@@ -2667,9 +2809,19 @@
                     diningTables.push(createDiningTable(tNum, loc.x, loc.z));
                 }
 
-                const targetHelpers = Math.min(2, data.helpersUnlocked || 0);
-                while (helpers.length < targetHelpers) {
-                    spawnHelperWorker(helpers.length + 1);
+                // Restore specialized helpers
+                if (GameState.upgrades) {
+                    if (GameState.upgrades.chefLevel > 0 && !helpers.some(h => h.role === 'CHEF')) {
+                        spawnHelperWorker('CHEF');
+                    }
+                    if (GameState.upgrades.runnerLevel > 0 && !helpers.some(h => h.role === 'RUNNER')) {
+                        spawnHelperWorker('RUNNER');
+                    }
+                    const targetWaiters = GameState.upgrades.waiterLevel || 0;
+                    const curWaiters = helpers.filter(h => h.role === 'WAITER').length;
+                    for (let w = curWaiters; w < targetWaiters; w++) {
+                        spawnHelperWorker('WAITER');
+                    }
                 }
 
                 GameState.playerWheat = data.playerWheat || 0;
@@ -2898,51 +3050,54 @@
         btnCap.disabled = u.capacityLevel >= 8 || GameState.money < capCost;
         document.getElementById('cost-upgrade-capacity').innerText = u.capacityLevel >= 8 ? 'MAX' : `$${capCost}`;
 
-        const helperCost = (u.helperLevel === 0 ? 250 : 500);
-        document.getElementById('upgrade-helper-level').innerText = `${u.helperLevel} Hired`;
-        const btnHelper = document.getElementById('btn-upgrade-helper');
-        btnHelper.disabled = u.helperLevel >= 2 || GameState.money < helperCost;
-        document.getElementById('cost-upgrade-helper').innerText = u.helperLevel >= 2 ? 'MAX' : `$${helperCost}`;
+        // Kitchen Chef Helper
+        const chefHired = (u.chefLevel > 0 || helpers.some(h => h.role === 'CHEF'));
+        const chefCost = 150;
+        const chefLvlEl = document.getElementById('upgrade-chef-level');
+        if (chefLvlEl) chefLvlEl.innerText = chefHired ? 'Hired (Active in Kitchen)' : 'Not Hired';
+        const btnChef = document.getElementById('btn-upgrade-chef');
+        if (btnChef) {
+            btnChef.disabled = chefHired || GameState.money < chefCost;
+            const costChefEl = document.getElementById('cost-upgrade-chef');
+            if (costChefEl) costChefEl.innerText = chefHired ? 'HIRED' : `$${chefCost}`;
+        }
 
-        // Brick Oven Upgrade
-        const ovenCost = 80 * (u.ovenLevel || 1);
+        // Counter Runner Helper
+        const runnerHired = (u.runnerLevel > 0 || helpers.some(h => h.role === 'RUNNER'));
+        const runnerCost = 220;
+        const runnerLvlEl = document.getElementById('upgrade-runner-level');
+        if (runnerLvlEl) runnerLvlEl.innerText = runnerHired ? 'Hired (Active Stocking)' : 'Not Hired';
+        const btnRunner = document.getElementById('btn-upgrade-runner');
+        if (btnRunner) {
+            btnRunner.disabled = runnerHired || GameState.money < runnerCost;
+            const costRunnerEl = document.getElementById('cost-upgrade-runner');
+            if (costRunnerEl) costRunnerEl.innerText = runnerHired ? 'HIRED' : `$${runnerCost}`;
+        }
+
+        // Dine-In Waiter Helper
+        const waiterCount = helpers.filter(h => h.role === 'WAITER').length;
+        const waiterCost = 280 + waiterCount * 170;
+        const waiterLvlEl = document.getElementById('upgrade-waiter-level');
+        if (waiterLvlEl) waiterLvlEl.innerText = `${waiterCount} Hired (Max 2)`;
+        const btnWaiter = document.getElementById('btn-upgrade-waiter');
+        if (btnWaiter) {
+            btnWaiter.disabled = waiterCount >= 2 || GameState.money < waiterCost;
+            const costWaiterEl = document.getElementById('cost-upgrade-waiter');
+            if (costWaiterEl) costWaiterEl.innerText = waiterCount >= 2 ? 'MAX' : `$${waiterCost}`;
+        }
+
+        // Turbo Brick Oven Upgrade
+        const ovenCost = 120 * (u.ovenLevel || 1);
         document.getElementById('upgrade-oven-level').innerText = `Lv ${u.ovenLevel || 1} / 8`;
         const btnOven = document.getElementById('btn-upgrade-oven');
         btnOven.disabled = (u.ovenLevel || 1) >= 8 || GameState.money < ovenCost;
         document.getElementById('cost-upgrade-oven').innerText = (u.ovenLevel || 1) >= 8 ? 'MAX' : `$${ovenCost}`;
 
-        // Flour Mill Upgrade
-        const millCost = 90 * (u.millLevel || 1);
-        const millLvlEl = document.getElementById('upgrade-mill-level');
-        if (millLvlEl) millLvlEl.innerText = `Lv ${u.millLevel || 1} / 8`;
-        const btnMill = document.getElementById('btn-upgrade-mill');
-        if (btnMill) btnMill.disabled = (u.millLevel || 1) >= 8 || GameState.money < millCost;
-        const costMillEl = document.getElementById('cost-upgrade-mill');
-        if (costMillEl) costMillEl.innerText = (u.millLevel || 1) >= 8 ? 'MAX' : `$${millCost}`;
-
-        // Dough Press Upgrade
-        const pressCost = 90 * (u.pressLevel || 1);
-        const pressLvlEl = document.getElementById('upgrade-press-level');
-        if (pressLvlEl) pressLvlEl.innerText = `Lv ${u.pressLevel || 1} / 8`;
-        const btnPress = document.getElementById('btn-upgrade-press');
-        if (btnPress) btnPress.disabled = (u.pressLevel || 1) >= 8 || GameState.money < pressCost;
-        const costPressEl = document.getElementById('cost-upgrade-press');
-        if (costPressEl) costPressEl.innerText = (u.pressLevel || 1) >= 8 ? 'MAX' : `$${pressCost}`;
-
-        // Wheat Farm Upgrade
-        const farmCost = 100 * (u.farmLevel || 1);
-        const farmLvlEl = document.getElementById('upgrade-farm-level');
-        if (farmLvlEl) farmLvlEl.innerText = `Lv ${u.farmLevel || 1} / 5`;
-        const btnFarm = document.getElementById('btn-upgrade-farm');
-        if (btnFarm) btnFarm.disabled = (u.farmLevel || 1) >= 5 || GameState.money < farmCost;
-        const costFarmEl = document.getElementById('cost-upgrade-farm');
-        if (costFarmEl) costFarmEl.innerText = (u.farmLevel || 1) >= 5 ? 'MAX' : `$${farmCost}`;
-
         // Front Cashier
         const cashierHired = (cashierWorker !== null || u.cashierLevel > 0);
         const cashierCost = 350;
         const cashierLvlEl = document.getElementById('upgrade-cashier-level');
-        if (cashierLvlEl) cashierLvlEl.innerText = cashierHired ? 'Hired (Active)' : 'Not Hired';
+        if (cashierLvlEl) cashierLvlEl.innerText = cashierHired ? 'Hired (Active at Register)' : 'Not Hired';
         const btnCashier = document.getElementById('btn-upgrade-cashier');
         if (btnCashier) {
             btnCashier.disabled = cashierHired || GameState.money < cashierCost;
@@ -2979,19 +3134,188 @@
         }
     });
 
-    document.getElementById('btn-upgrade-helper').addEventListener('click', () => {
-        const cost = (GameState.upgrades.helperLevel === 0 ? 250 : 500);
-        if (GameState.money >= cost && GameState.upgrades.helperLevel < 2) {
-            GameState.money -= cost;
-            spawnHelperWorker(helpers.length + 1);
-            sound.playUpgrade();
-            checkQuestTrigger('hire_helper');
-            showToast(`👨‍🍳 Worker ${helpers.length} hired!`);
-            updateHUD();
-            updateUpgradesUI();
-            SaveSystem.save();
+    // Specialized Helper Button Bindings
+    const btnUpgradeChef = document.getElementById('btn-upgrade-chef');
+    if (btnUpgradeChef) {
+        btnUpgradeChef.addEventListener('click', () => {
+            const cost = 150;
+            if (GameState.money >= cost && !helpers.some(h => h.role === 'CHEF')) {
+                GameState.money -= cost;
+                spawnHelperWorker('CHEF');
+                sound.playUpgrade();
+                showToast('👨‍🍳 Kitchen Chef hired! Dough & oven automated!');
+                updateHUD();
+                updateUpgradesUI();
+                SaveSystem.save();
+            }
+        });
+    }
+
+    const btnUpgradeRunner = document.getElementById('btn-upgrade-runner');
+    if (btnUpgradeRunner) {
+        btnUpgradeRunner.addEventListener('click', () => {
+            const cost = 220;
+            if (GameState.money >= cost && !helpers.some(h => h.role === 'RUNNER')) {
+                GameState.money -= cost;
+                spawnHelperWorker('RUNNER');
+                sound.playUpgrade();
+                showToast('🏃 Counter Runner hired! Front shelf kept stocked!');
+                updateHUD();
+                updateUpgradesUI();
+                SaveSystem.save();
+            }
+        });
+    }
+
+    const btnUpgradeWaiter = document.getElementById('btn-upgrade-waiter');
+    if (btnUpgradeWaiter) {
+        btnUpgradeWaiter.addEventListener('click', () => {
+            const curWaiters = helpers.filter(h => h.role === 'WAITER').length;
+            const cost = 280 + curWaiters * 170;
+            if (GameState.money >= cost && curWaiters < 2) {
+                GameState.money -= cost;
+                spawnHelperWorker('WAITER');
+                sound.playUpgrade();
+                showToast(`🍽️ Waiter #${curWaiters + 1} hired! Serving & cleaning tables!`);
+                updateHUD();
+                updateUpgradesUI();
+                SaveSystem.save();
+            }
+        });
+    }
+
+    // =========================================================================
+    // 23. FRANCHISE EMPIRE MODAL & BUS TRANSIT
+    // =========================================================================
+    const franchiseBtn = document.getElementById('franchise-btn');
+    const franchiseModal = document.getElementById('franchise-modal');
+    const closeFranchiseBtn = document.getElementById('close-franchise-btn');
+    const closeFranchiseX = document.getElementById('close-franchise-x');
+    const btnUnlockBranch2 = document.getElementById('btn-unlock-branch-2');
+    const btnCollectRoyalties = document.getElementById('btn-collect-royalties');
+
+    function openFranchiseModal() {
+        updateFranchiseUI();
+        if (franchiseModal) franchiseModal.style.display = 'flex';
+    }
+
+    function closeFranchiseModal() {
+        if (franchiseModal) franchiseModal.style.display = 'none';
+    }
+
+    if (franchiseBtn) franchiseBtn.addEventListener('click', openFranchiseModal);
+    if (closeFranchiseBtn) closeFranchiseBtn.addEventListener('click', closeFranchiseModal);
+    if (closeFranchiseX) closeFranchiseX.addEventListener('click', closeFranchiseModal);
+
+    function updateFranchiseUI() {
+        const royaltyAmountEl = document.getElementById('royalty-amount');
+        if (royaltyAmountEl) royaltyAmountEl.innerText = GameState.franchiseRoyalties || 0;
+
+        const tierTitle = document.getElementById('franchise-tier-title');
+        if (tierTitle) tierTitle.innerText = `Franchise Empire: Tier ${GameState.franchiseTier || 1}`;
+
+        const royaltySub = document.getElementById('franchise-royalty-sub');
+        if (royaltySub) royaltySub.innerText = `Passive Empire Royalties: +$${(GameState.franchiseTier || 1) * 3} / 10s`;
+
+        const b2Card = document.getElementById('branch-2-card');
+        const b2Status = document.getElementById('branch-2-status');
+        if (GameState.branch2Unlocked) {
+            if (b2Card) b2Card.classList.add('active-branch');
+            if (b2Status) {
+                b2Status.innerText = 'OPERATING (+50% Customers)';
+                b2Status.style.color = '#2b8a3e';
+            }
+            if (btnUnlockBranch2) {
+                btnUnlockBranch2.disabled = true;
+                btnUnlockBranch2.innerText = 'Unlocked';
+            }
+        } else {
+            if (btnUnlockBranch2) {
+                btnUnlockBranch2.disabled = GameState.money < 1500;
+            }
         }
-    });
+
+        const b3Card = document.getElementById('branch-3-card');
+        const b3Status = document.getElementById('branch-3-status');
+        const btnUnlockBranch3 = document.getElementById('btn-unlock-branch-3');
+        if (GameState.branch3Unlocked) {
+            if (b3Card) b3Card.classList.add('active-branch');
+            if (b3Status) {
+                b3Status.innerText = 'OPERATING (2x Cashiers & Delivery Fleet)';
+                b3Status.style.color = '#2b8a3e';
+            }
+            if (btnUnlockBranch3) {
+                btnUnlockBranch3.disabled = true;
+                btnUnlockBranch3.innerText = 'Unlocked';
+            }
+        } else {
+            if (btnUnlockBranch3) {
+                const canUnlockB3 = GameState.money >= 3500 && GameState.branch2Unlocked;
+                btnUnlockBranch3.disabled = !canUnlockB3;
+                btnUnlockBranch3.innerText = canUnlockB3 ? 'Unlock ($3,500)' : 'Locked ($3,500)';
+                if (canUnlockB3) {
+                    btnUnlockBranch3.classList.remove('btn-secondary');
+                    btnUnlockBranch3.classList.add('btn-success');
+                }
+            }
+        }
+    }
+
+    if (btnUnlockBranch2) {
+        btnUnlockBranch2.addEventListener('click', () => {
+            if (GameState.money >= 1500 && !GameState.branch2Unlocked) {
+                GameState.money -= 1500;
+                GameState.branch2Unlocked = true;
+                GameState.franchiseTier = 2;
+                sound.playUnlock();
+                showToast('🌊 Branch #2 Boardwalk UNLOCKED! Franchise Empire expanded!');
+                updateFranchiseUI();
+                updateHUD();
+                SaveSystem.save();
+            }
+        });
+    }
+
+    const btnUnlockBranch3 = document.getElementById('btn-unlock-branch-3');
+    if (btnUnlockBranch3) {
+        btnUnlockBranch3.addEventListener('click', () => {
+            if (GameState.money >= 3500 && GameState.branch2Unlocked && !GameState.branch3Unlocked) {
+                GameState.money -= 3500;
+                GameState.branch3Unlocked = true;
+                GameState.franchiseTier = 3;
+                sound.playUnlock();
+                showToast('🏙️ Branch #3 Metro Mall UNLOCKED! Grand Tycoon Achieved!');
+                updateFranchiseUI();
+                updateHUD();
+                SaveSystem.save();
+            }
+        });
+    }
+
+    if (btnCollectRoyalties) {
+        btnCollectRoyalties.addEventListener('click', () => {
+            if (GameState.franchiseRoyalties > 0) {
+                const collected = GameState.franchiseRoyalties;
+                GameState.money += collected;
+                GameState.franchiseRoyalties = 0;
+                sound.playCoin();
+                showToast(`💰 Collected +$${collected} in Franchise Royalties!`);
+                updateFranchiseUI();
+                updateHUD();
+                SaveSystem.save();
+            }
+        });
+    }
+
+    // Passive Royalties Accumulator
+    setInterval(() => {
+        if (GameState.branch2Unlocked || GameState.branch3Unlocked) {
+            const multiplier = GameState.branch3Unlocked ? 8 : (GameState.branch2Unlocked ? 3 : 1);
+            GameState.franchiseRoyalties = (GameState.franchiseRoyalties || 0) + multiplier;
+            const rEl = document.getElementById('royalty-amount');
+            if (rEl) rEl.innerText = GameState.franchiseRoyalties;
+        }
+    }, 10000);
 
     document.getElementById('btn-upgrade-oven').addEventListener('click', () => {
         const cost = 80 * (GameState.upgrades.ovenLevel || 1);
@@ -3469,11 +3793,30 @@
             updateHUD();
         }
 
-        // Continuous Automated Brick Oven Baking (Runs continuously so players never get stuck)
-        ovenTimer += dt * (GameState.ovenSpeedMultiplier || 1.0);
-        if (ovenTimer >= 2.4 && conveyorPizzas.length < 5 && readyPizzas.length < 16) {
-            ovenTimer = 0;
-            startPizzaAssembly(true);
+        // 3F. DOUGH & TOPPING PREP STATION (MANUAL OR KITCHEN CHEF HELPER)
+        const hasChefHelper = helpers.some(h => h.role === 'CHEF');
+        const distToPrep = pPos.distanceTo(PREP_STATION_POS);
+        const isPlayerPrepping = (distToPrep < 3.2);
+
+        updateDOMTransform(prepStationTag, PREP_STATION_POS, 4.0);
+
+        if ((isPlayerPrepping || hasChefHelper) && conveyorPizzas.length < 4 && readyPizzas.length < 16) {
+            prepTimer += dt * (isPlayerPrepping ? 1.4 : 1.0) * (GameState.ovenSpeedMultiplier || 1.0);
+            const statusEl = document.getElementById('prep-status');
+            if (statusEl) {
+                const pct = Math.min(100, Math.floor((prepTimer / 1.8) * 100));
+                statusEl.innerText = `Rolling Dough... ${pct}%`;
+            }
+
+            if (prepTimer >= 1.8) {
+                prepTimer = 0;
+                startPizzaAssembly(!isPlayerPrepping);
+            }
+        } else {
+            const statusEl = document.getElementById('prep-status');
+            if (statusEl) {
+                statusEl.innerText = readyPizzas.length >= 16 ? 'Rack Full' : (hasChefHelper ? 'Chef Active' : 'Stand Here to Roll');
+            }
         }
 
         // 4. CONVEYOR TRACK: OVEN BAKING -> PACKAGING MACHINE -> PICKUP TRAY
@@ -3538,6 +3881,26 @@
             sound.playPizzaPickup();
             spawnTransferItem('pizza', PIZZA_PICKUP_POS, player.root.position);
             updatePlayerPizzaStackVisuals(player, GameState.playerPizzas);
+            updateHUD();
+        }
+
+        // 5B. FRONT COUNTER HEATED SHELF DROP TRIGGER
+        updateDOMTransform(shelfTag, COUNTER_SHELF_WORLD_POS, 4.2);
+        const distToShelfDrop = pPos.distanceTo(COUNTER_DROP_SPOT);
+        if (distToShelfDrop < 3.2 && GameState.playerPizzas > 0 && counterPizzas.length < 12 && playerDropCooldown <= 0) {
+            playerDropCooldown = 0.16;
+            GameState.playerPizzas--;
+            updatePlayerPizzaStackVisuals(player, GameState.playerPizzas);
+            sound.playPizzaPickup();
+
+            const shelfBox = createPizzaBoxMesh();
+            const stackHeight = (counterPizzas.length % 6) * 0.42 + 0.12;
+            const col = Math.floor(counterPizzas.length / 6);
+            shelfBox.position.set((col === 0 ? -0.85 : 0.85), stackHeight, 0);
+            counterShelfGroup.add(shelfBox);
+            counterPizzas.push(shelfBox);
+            updateCounterShelfVisuals();
+            spawnTransferItem('pizza', player.root.position, COUNTER_SHELF_WORLD_POS);
             updateHUD();
         }
 
@@ -3608,245 +3971,137 @@
             }
         }
 
-        // 10. HELPER WORKERS AI (MAX 2 WORKERS: 0=KITCHEN, 1=DINING)
+        // 10. SPECIALIZED HELPER WORKERS AI (CHEF, RUNNER, WAITER)
         for (let hIndex = 0; hIndex < helpers.length; hIndex++) {
             const h = helpers[hIndex];
             updateDOMTransform(h.tagEl, h.root.position, 4.4);
 
-            // SPECIALIZATION: Helper 0 is Farm-To-Table Kitchen Master
-            if (hIndex === 0) {
-                h.wheat = h.wheat || 0;
-                h.flour = h.flour || 0;
-                h.dough = h.dough || 0;
+            let target = null;
+            let action = null;
 
-                let target = null;
-                let action = null;
-
-                if (h.dough > 0) {
-                    target = ToppingState.dropPos;
-                    action = 'DROP_DOUGH';
-                } else if (h.flour > 0) {
-                    target = PressState.dropPos;
-                    action = 'DROP_FLOUR';
-                } else if (h.wheat >= 2) {
-                    target = MillState.dropPos;
-                    action = 'DROP_WHEAT';
-                } else if (PressState.readyDough > 0 && h.dough === 0 && h.flour === 0 && h.wheat === 0) {
-                    target = PressState.pickupPos;
-                    action = 'PICKUP_DOUGH';
-                } else if (MillState.readyFlour > 0 && h.dough === 0 && h.flour === 0 && h.wheat === 0) {
-                    target = MillState.pickupPos;
-                    action = 'PICKUP_FLOUR';
+            // --- ROLE A: KITCHEN CHEF HELPER ---
+            if (h.role === 'CHEF') {
+                target = PREP_STATION_POS;
+                action = 'STAND_AT_PREP';
+            }
+            // --- ROLE B: COUNTER RUNNER HELPER ---
+            else if (h.role === 'RUNNER') {
+                if (h.pizzas <= 0) {
+                    target = PIZZA_PICKUP_POS;
+                    action = 'FETCH_FROM_OVEN';
                 } else {
-                    const ripe = wheatCrops.find(c => c.isRipe);
-                    if (ripe) {
-                        target = ripe.pos;
-                        action = 'HARVEST_WHEAT';
-                    } else if (h.wheat > 0) {
-                        target = MillState.dropPos;
-                        action = 'DROP_WHEAT';
-                    }
+                    target = COUNTER_DROP_SPOT;
+                    action = 'DROP_TO_SHELF';
                 }
-
-                if (target) {
-                    const dist = h.root.position.distanceTo(target);
-                    if (dist > 1.4) {
-                        const dir = target.clone().sub(h.root.position).normalize();
-                        const moveDist = h.speed * dt;
-                        const res = resolveCollision(h.root.position.x + dir.x * moveDist, h.root.position.z + dir.z * moveDist, 0.5);
-                        h.root.position.x = res.x;
-                        h.root.position.z = res.z;
-                        h.root.rotation.y = Math.atan2(dir.x, dir.z);
-                        h.walkCycle += dt * 12;
-                        h.leftLeg.rotation.x = Math.sin(h.walkCycle) * 0.5;
-                        h.rightLeg.rotation.x = -Math.sin(h.walkCycle) * 0.5;
+            }
+            // --- ROLE C: DINE-IN WAITER HELPER ---
+            else {
+                // If carrying trash, go to dump
+                if (h.trash > 0) {
+                    target = TRASH_BIN_POS;
+                    action = 'DUMP_TRASH';
+                }
+                // If has no pizzas, check for dirty tables first
+                else if (h.pizzas <= 0) {
+                    const dirtyTable = diningTables.find(t => t.isDirty);
+                    if (dirtyTable) {
+                        target = dirtyTable.serveSpot; // FIXED: Target serveSpot outside obstacle radius!
+                        action = 'CLEAN_TABLE';
+                        h.targetTable = dirtyTable;
                     } else {
-                        if (action === 'DROP_DOUGH') {
-                            spawnTransferItem('dough', h.root.position, ToppingState.dropPos);
-                            h.dough--;
-                            startPizzaAssembly();
-                            updatePlayerCarryVisuals(h);
-                        } else if (action === 'DROP_FLOUR') {
-                            spawnTransferItem('flour', h.root.position, PressState.dropPos);
-                            h.flour--;
-                            PressState.storedFlour++;
-                            sound.playDoughPress();
-                            updatePlayerCarryVisuals(h);
-                        } else if (action === 'DROP_WHEAT') {
-                            spawnTransferItem('wheat', h.root.position, MillState.dropPos);
-                            h.wheat = 0;
-                            MillState.storedWheat = Math.min(MillState.maxWheat, MillState.storedWheat + 2);
-                            sound.playGrinder();
-                            updatePlayerCarryVisuals(h);
-                        } else if (action === 'PICKUP_DOUGH') {
-                            PressState.readyDough--;
-                            h.dough = (h.dough || 0) + 1;
-                            doughDisks.forEach((d, idx) => { d.visible = idx < PressState.readyDough; });
-                            sound.playPizzaPickup();
-                            updatePlayerCarryVisuals(h);
-                        } else if (action === 'PICKUP_FLOUR') {
-                            MillState.readyFlour--;
-                            h.flour = (h.flour || 0) + 1;
-                            flourSacks.forEach((s, idx) => { s.visible = idx < MillState.readyFlour; });
-                            sound.playPizzaPickup();
-                            updatePlayerCarryVisuals(h);
-                        } else if (action === 'HARVEST_WHEAT') {
-                            const crop = wheatCrops.find(c => c.pos.distanceTo(target) < 0.5 && c.isRipe);
-                            if (crop) {
-                                crop.isRipe = false;
-                                crop.regrowTimer = 4.0;
-                                crop.group.scale.y = 0.25;
-                                h.wheat = (h.wheat || 0) + 1;
-                                sound.playHarvest();
-                                updatePlayerCarryVisuals(h);
-                            }
+                        // Go fetch pizzas for dining tables
+                        const tableNeedingPizza = diningTables.find(t => t.customer && !t.hasPizza && !t.isDirty);
+                        if (tableNeedingPizza && readyPizzas.length > 0) {
+                            target = PIZZA_PICKUP_POS;
+                            action = 'FETCH_FOR_TABLES';
                         }
                     }
                 }
-                continue;
-            }
-
-            if (h.trash > 0) {
-                const distToDump = h.root.position.distanceTo(TRASH_BIN_POS);
-                if (distToDump > 1.2) {
-                    const dir = TRASH_BIN_POS.clone().sub(h.root.position).normalize();
-                    const moveDist = h.speed * dt;
-                    const res = resolveCollision(h.root.position.x + dir.x * moveDist, h.root.position.z + dir.z * moveDist, 0.5);
-                    h.root.position.x = res.x;
-                    h.root.position.z = res.z;
-                    h.root.rotation.y = Math.atan2(dir.x, dir.z);
-                    h.walkCycle += dt * 12;
-                    h.leftLeg.rotation.x = Math.sin(h.walkCycle) * 0.5;
-                    h.rightLeg.rotation.x = -Math.sin(h.walkCycle) * 0.5;
-                } else {
-                    h.trash = 0;
-                    sound.playTrashDump();
-                    addCashToPile(2);
+                // If carrying pizzas, serve seated customer
+                else {
+                    const tableToServe = diningTables.find(t => t.customer && !t.hasPizza && !t.isDirty);
+                    if (tableToServe) {
+                        target = tableToServe.serveSpot;
+                        action = 'SERVE_TABLE';
+                        h.targetTable = tableToServe;
+                    } else {
+                        // No seated customer needs pizza right now -> drop extra pizzas onto Front Counter Heated Shelf!
+                        target = COUNTER_DROP_SPOT;
+                        action = 'DROP_TO_SHELF';
+                    }
                 }
-                continue;
             }
 
-            const dirtyTable = diningTables.find(t => t.isDirty);
-            if (h.pizzas === 0 && dirtyTable) {
-                const dist = h.root.position.distanceTo(dirtyTable.pos);
-                if (dist > 1.5) {
-                    const dir = dirtyTable.pos.clone().sub(h.root.position).normalize();
-                    const moveDist = h.speed * dt;
-                    const res = resolveCollision(h.root.position.x + dir.x * moveDist, h.root.position.z + dir.z * moveDist, 0.5);
-                    h.root.position.x = res.x;
-                    h.root.position.z = res.z;
-                    h.root.rotation.y = Math.atan2(dir.x, dir.z);
-                    h.walkCycle += dt * 12;
-                    h.leftLeg.rotation.x = Math.sin(h.walkCycle) * 0.5;
-                    h.rightLeg.rotation.x = -Math.sin(h.walkCycle) * 0.5;
-                } else {
-                    dirtyTable.isDirty = false;
-                    dirtyTable.dirtyDishesGroup.visible = false;
-                    dirtyTable.trashBubbleEl.style.display = 'none';
-                    h.trash = 1;
-                    addCashToPile(1);
-                    sound.playClean();
-                }
-                continue;
-            }
-
-            if (h.state === 'FETCH_PIZZA') {
-                const helperIdx = helpers.indexOf(h);
-                const target = PIZZA_PICKUP_POS.clone().add(new THREE.Vector3(1.8 + (helperIdx % 3) * 1.8, 0, Math.floor(helperIdx / 3) * 1.6));
+            // Execute movement & anti-stuck pathfinding
+            if (target) {
                 const dist = h.root.position.distanceTo(target);
-
-                if (dist > 0.5) {
+                if (dist > 1.3) {
                     const dir = target.clone().sub(h.root.position).normalize();
                     const moveDist = h.speed * dt;
-                    const res = resolveCollision(h.root.position.x + dir.x * moveDist, h.root.position.z + dir.z * moveDist, 0.5);
+                    const res = resolveCollision(h.root.position.x + dir.x * moveDist, h.root.position.z + dir.z * moveDist, 0.4);
                     h.root.position.x = res.x;
                     h.root.position.z = res.z;
                     h.root.rotation.y = Math.atan2(dir.x, dir.z);
-                    h.walkCycle += dt * 12;
+                    h.walkCycle += dt * 11;
                     h.leftLeg.rotation.x = Math.sin(h.walkCycle) * 0.5;
                     h.rightLeg.rotation.x = -Math.sin(h.walkCycle) * 0.5;
-                } else {
-                    if (readyPizzas.length > 0 && h.pizzas < h.maxPizzas) {
-                        const box = readyPizzas.pop();
-                        scene.remove(box);
-                        h.pizzas++;
-                        sound.playPizzaPickup();
-                        updatePlayerPizzaStackVisuals(h, h.pizzas);
-                    }
-                    if (h.pizzas >= h.maxPizzas || (readyPizzas.length === 0 && h.pizzas > 0)) {
-                        h.state = 'SERVE';
-                    }
-                }
-            } else if (h.state === 'SERVE') {
-                let serveTarget = null;
-                const counterCust = customers.find(c => c.waitingAtCounter && c.queueIndex === 0 && !c.hasReceivedPizza);
-                if (counterCust) {
-                    serveTarget = COUNTER_PLAYER_SPOT;
-                } else {
-                    const table = diningTables.find(t => t.customer && !t.hasPizza && !t.isDirty);
-                    if (table) serveTarget = table.serveSpot;
-                }
 
-                if (serveTarget) {
-                    const dist = h.root.position.distanceTo(serveTarget);
-                    if (dist > 0.6) {
-                        const dir = serveTarget.clone().sub(h.root.position).normalize();
-                        const moveDist = h.speed * dt;
-                        const res = resolveCollision(h.root.position.x + dir.x * moveDist, h.root.position.z + dir.z * moveDist, 0.5);
-                        h.root.position.x = res.x;
-                        h.root.position.z = res.z;
-                        h.root.rotation.y = Math.atan2(dir.x, dir.z);
-                        h.walkCycle += dt * 12;
-                        h.leftLeg.rotation.x = Math.sin(h.walkCycle) * 0.5;
-                        h.rightLeg.rotation.x = -Math.sin(h.walkCycle) * 0.5;
+                    // Anti-Stuck Watchdog: gently nudge if blocked for > 1.8s
+                    if (h.lastPos && h.root.position.distanceTo(h.lastPos) < 0.04) {
+                        h.stuckTimer = (h.stuckTimer || 0) + dt;
+                        if (h.stuckTimer > 1.8) {
+                            h.stuckTimer = 0;
+                            h.root.position.addScaledVector(dir, 0.65);
+                        }
                     } else {
-                        if (counterCust) {
-                            advanceCounterQueue(counterCust);
+                        h.stuckTimer = 0;
+                        h.lastPos = h.root.position.clone();
+                    }
+                } else {
+                    // REACHED TARGET: PERFORM ROLE ACTION
+                    h.leftLeg.rotation.x = 0;
+                    h.rightLeg.rotation.x = 0;
+
+                    if (action === 'FETCH_FROM_OVEN' || action === 'FETCH_FOR_TABLES') {
+                        if (readyPizzas.length > 0 && h.pizzas < h.maxPizzas) {
+                            const box = readyPizzas.pop();
+                            scene.remove(box);
+                            h.pizzas++;
+                            sound.playPizzaPickup();
+                            updatePlayerPizzaStackVisuals(h, h.pizzas);
+                        }
+                    } else if (action === 'DROP_TO_SHELF') {
+                        if (h.pizzas > 0 && counterPizzas.length < 12) {
                             h.pizzas--;
                             updatePlayerPizzaStackVisuals(h, h.pizzas);
-                            sound.playRegister();
-                            addCashToPile(2);
-                            checkQuestTrigger('serve_customer');
-                            updateHUD();
-                        } else {
-                            const table = diningTables.find(t => t.customer && !t.hasPizza && !t.isDirty);
-                            if (table) {
-                                table.hasPizza = true;
-                                table.plate.visible = true;
-                                table.slice.visible = true;
-                                h.pizzas--;
-                                updatePlayerPizzaStackVisuals(h, h.pizzas);
-                                sound.playServe();
-                            }
+                            sound.playPizzaPickup();
+
+                            const shelfBox = createPizzaBoxMesh();
+                            const stackHeight = (counterPizzas.length % 6) * 0.42 + 0.12;
+                            const col = Math.floor(counterPizzas.length / 6);
+                            shelfBox.position.set((col === 0 ? -0.85 : 0.85), stackHeight, 0);
+                            counterShelfGroup.add(shelfBox);
+                            counterPizzas.push(shelfBox);
+                            updateCounterShelfVisuals();
                         }
-                        if (h.pizzas <= 0) h.state = 'FETCH_PIZZA';
-                    }
-                } else {
-                    if (h.pizzas <= 0) {
-                        h.state = 'FETCH_PIZZA';
-                    } else {
-                        // Deadlock fix: If holding pizzas but no customer waiting to be served, clean dirty tables!
-                        const dirtyTable = diningTables.find(t => t.isDirty);
-                        if (dirtyTable) {
-                            const dist = h.root.position.distanceTo(dirtyTable.pos);
-                            if (dist > 1.5) {
-                                const dir = dirtyTable.pos.clone().sub(h.root.position).normalize();
-                                const moveDist = h.speed * dt;
-                                const res = resolveCollision(h.root.position.x + dir.x * moveDist, h.root.position.z + dir.z * moveDist, 0.5);
-                                h.root.position.x = res.x;
-                                h.root.position.z = res.z;
-                                h.root.rotation.y = Math.atan2(dir.x, dir.z);
-                                h.walkCycle += dt * 12;
-                                h.leftLeg.rotation.x = Math.sin(h.walkCycle) * 0.5;
-                                h.rightLeg.rotation.x = -Math.sin(h.walkCycle) * 0.5;
-                            } else {
-                                dirtyTable.isDirty = false;
-                                dirtyTable.dirtyDishesGroup.visible = false;
-                                dirtyTable.trashBubbleEl.style.display = 'none';
-                                addCashToPile(1);
-                                sound.playClean();
-                            }
-                        }
+                    } else if (action === 'CLEAN_TABLE' && h.targetTable && h.targetTable.isDirty) {
+                        h.targetTable.isDirty = false;
+                        h.targetTable.dirtyDishesGroup.visible = false;
+                        h.targetTable.trashBubbleEl.style.display = 'none';
+                        h.trash = 1;
+                        addCashToPile(1); // Tip earned!
+                        sound.playClean();
+                    } else if (action === 'SERVE_TABLE' && h.targetTable && h.targetTable.customer && !h.targetTable.hasPizza) {
+                        h.targetTable.hasPizza = true;
+                        h.targetTable.plate.visible = true;
+                        h.targetTable.slice.visible = true;
+                        h.pizzas--;
+                        updatePlayerPizzaStackVisuals(h, h.pizzas);
+                        sound.playServe();
+                    } else if (action === 'DUMP_TRASH') {
+                        h.trash = 0;
+                        sound.playTrashDump();
+                        addCashToPile(1);
                     }
                 }
             }
@@ -3889,15 +4144,14 @@
                         sound.playRegister();
                         updatePlayerPizzaStackVisuals(player, GameState.playerPizzas);
 
-                        const cashBundles = Math.max(2, Math.ceil(car.rewardCash / 5));
-                        addCashToPile(cashBundles);
-                        GameState.money += car.rewardCash;
-                        addPlayerExp(50);
+                        const rewardMoney = car.orderPizzas * getPizzaPrice() + (car.wantsDrink ? 3 : 0);
+                        addCashToPile(rewardMoney);
+                        addPlayerExp(40);
                         GameState.driveThruCarsServed++;
 
                         const pScreen = toScreenXY(player.root.position, 4.8);
-                        spawnFloatingCashText(pScreen.x, pScreen.y, `+$${car.rewardCash} Drive-Thru!`);
-                        showToast(`🚗 Drive-Thru Order Served! +$${car.rewardCash}!`);
+                        spawnFloatingCashText(pScreen.x, pScreen.y, `+$${rewardMoney} Drive-Thru!`);
+                        showToast(`🚗 Drive-Thru Order Served! +$${rewardMoney}!`);
                         checkQuestTrigger('serve_drive_thru');
                         updateHUD();
 
@@ -3920,20 +4174,32 @@
             }
         }
 
-        // 10C. FRONT CASHIER WORKER AI (AUTOMATED COUNTER SERVICE)
+        // 10C. FRONT CASHIER WORKER AI (AUTOMATED COUNTER SERVICE FROM HEATED SHELF)
         if (cashierWorker) {
             updateDOMTransform(cashierWorker.tagEl, cashierWorker.mesh.root.position, 4.4);
             cashierServeTimer += dt;
-            if (cashierServeTimer >= 2.0) {
+            if (cashierServeTimer >= 1.6) {
                 cashierServeTimer = 0;
                 const frontCust = customers.find(c => c.waitingAtCounter && c.queueIndex === 0 && !c.hasReceivedPizza);
                 if (frontCust) {
-                    advanceCounterQueue(frontCust);
-                    sound.playRegister();
-                    addCashToPile(2);
-                    addPlayerExp(15);
-                    checkQuestTrigger('serve_customer');
-                    updateHUD();
+                    // STRICT REQUIREMENT: Cashier can ONLY serve if hot pizzas are available on the Front Heated Shelf!
+                    if (counterPizzas.length > 0) {
+                        const boxMesh = counterPizzas.pop();
+                        counterShelfGroup.remove(boxMesh);
+                        updateCounterShelfVisuals();
+
+                        sound.playRegister();
+                        const pPrice = getPizzaPrice() + (frontCust.wantsDrink ? 2 : 0);
+                        addCashToPile(pPrice);
+                        addPlayerExp(10);
+                        checkQuestTrigger('serve_customer');
+                        updateHUD();
+                        advanceCounterQueue(frontCust);
+                    } else {
+                        // Heated shelf is empty! Customer waits patiently!
+                        frontCust.bubbleEl.innerHTML = '<span>🍕⏳</span>';
+                        frontCust.bubbleEl.style.display = 'flex';
+                    }
                 }
             }
         }
@@ -3995,23 +4261,32 @@
                     const distPlayerToCounter = player.root.position.distanceTo(QUEUE_SPOTS[0]);
                     const distPlayerToBack = player.root.position.distanceTo(COUNTER_PLAYER_SPOT);
 
-                    if ((distPlayerToCounter < 4.0 || distPlayerToBack < 3.5) && GameState.playerPizzas > 0) {
-                        GameState.playerPizzas--;
-                        sound.playRegister();
-
-                        let cashBonus = 1;
-                        if (cust.wantsDrink && GameState.playerDrinks > 0) {
-                            GameState.playerDrinks--;
-                            cashBonus = 2;
-                            sound.playDrink();
-                            showToast('🥤 Drink served with combo! 2x Profit!');
+                    if ((distPlayerToCounter < 4.0 || distPlayerToBack < 3.5) && (GameState.playerPizzas > 0 || counterPizzas.length > 0)) {
+                        let gotPizza = false;
+                        if (GameState.playerPizzas > 0) {
+                            GameState.playerPizzas--;
+                            updatePlayerPizzaStackVisuals(player, GameState.playerPizzas);
+                            gotPizza = true;
+                        } else if (counterPizzas.length > 0) {
+                            const taken = counterPizzas.pop();
+                            counterShelfGroup.remove(taken);
+                            updateCounterShelfVisuals();
+                            gotPizza = true;
                         }
 
-                        addCashToPile(cashBonus);
-                        updatePlayerPizzaStackVisuals(player, GameState.playerPizzas);
-                        updateHUD();
-                        advanceCounterQueue(cust);
-                        checkQuestTrigger('serve_customer');
+                        if (gotPizza) {
+                            sound.playRegister();
+                            const pPrice = getPizzaPrice() + (cust.wantsDrink && GameState.playerDrinks > 0 ? 2 : 0);
+                            if (cust.wantsDrink && GameState.playerDrinks > 0) {
+                                GameState.playerDrinks--;
+                                sound.playDrink();
+                                showToast('🥤 Drink served with combo! +$2 Bonus!');
+                            }
+                            addCashToPile(pPrice);
+                            updateHUD();
+                            advanceCounterQueue(cust);
+                            checkQuestTrigger('serve_customer');
+                        }
                     }
                 }
             } else if (cust.state === 'WALK_TO_TABLE') {
@@ -4096,14 +4371,14 @@
             }
         }
 
-        // 12. CASH PILE COLLECTION
+        // 12. CASH PILE COLLECTION (ACCURATE DOLLAR REVENUE - NO INFLATION MULTIPLIER)
         const distToCash = player.root.position.distanceTo(CASH_DROP_POS);
-        if (distToCash < 3.5 && activeCashCount > 0) {
-            const collected = activeCashCount;
+        if (distToCash < 3.5 && (activeCashCount > 0 || activeCashDollars > 0)) {
+            const moneyEarned = activeCashDollars > 0 ? activeCashDollars : (activeCashCount * (GameState.pizzaPrice || 3));
             activeCashCount = 0;
+            activeCashDollars = 0;
             updateCashPileVisuals();
 
-            const moneyEarned = collected * 5;
             GameState.money += moneyEarned;
             sound.playCoin();
 
@@ -4112,6 +4387,18 @@
             checkQuestTrigger('earn_cash', moneyEarned);
             updateHUD();
             SaveSystem.save();
+        }
+
+        // 12B. 🚌 FRANCHISE TRANSIT BUS ZONE TRIGGER
+        if (typeof franchiseBusLabel !== 'undefined' && franchiseBusLabel) {
+            updateDOMTransform(franchiseBusLabel, FRANCHISE_BUS_ZONE_POS, 4.2);
+            fZoneRing.rotation.z += dt * 1.6;
+            const distToBus = player.root.position.distanceTo(FRANCHISE_BUS_ZONE_POS);
+            if (distToBus < 2.8) {
+                if (franchiseModal && franchiseModal.style.display !== 'flex') {
+                    openFranchiseModal();
+                }
+            }
         }
 
         // 13. UNLOCK ZONE INTERACTION (FOUNTAIN BILLS STREAM)
