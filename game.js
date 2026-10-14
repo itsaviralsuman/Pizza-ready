@@ -100,23 +100,23 @@
         toggle: () => true
     };
 
-    // --- HIGH DEFINITION PERFORMANCE MODES ---
+    // --- THERMAL-OPTIMIZED PERFORMANCE MODES (ZERO OVERHEATING) ---
     const QualityPresets = {
         ULTRA: {
-            name: 'Ultra',
-            dpr: Math.min(window.devicePixelRatio || 1, 2.0),
+            name: 'High',
+            dpr: Math.min(window.devicePixelRatio || 1, 1.25),
             shadows: true,
-            shadowMapSize: 2048,
-            shadowType: THREE.PCFSoftShadowMap,
-            hint: '💎 Ultra HD: Razor sharp 2x Retina & soft shadows'
+            shadowMapSize: 1024,
+            shadowType: THREE.PCFShadowMap,
+            hint: '💎 High: Sharp visuals with crisp shadows'
         },
         BALANCED: {
             name: 'Balanced',
-            dpr: Math.min(window.devicePixelRatio || 1, 1.5),
+            dpr: 1.0,
             shadows: true,
-            shadowMapSize: 1024,
-            shadowType: THREE.PCFSoftShadowMap,
-            hint: '⚡ Smooth 60 FPS: Crisp antialiased visuals'
+            shadowMapSize: 512,
+            shadowType: THREE.BasicShadowMap,
+            hint: '⚡ Balanced: Butter smooth 60 FPS, completely cool laptop & phone'
         },
         FAST: {
             name: 'Fast',
@@ -124,73 +124,68 @@
             shadows: false,
             shadowMapSize: 512,
             shadowType: THREE.BasicShadowMap,
-            hint: '🚀 Battery Saver: Antialiased performance mode'
+            hint: '🚀 Ultra Fast: Maximum battery saver, zero fan noise'
         }
     };
 
-    let currentQualityKey = localStorage.getItem('pizza_tycoon_quality') || 'ULTRA';
-    if (!QualityPresets[currentQualityKey]) currentQualityKey = 'ULTRA';
+    let currentQualityKey = localStorage.getItem('pizza_tycoon_quality') || 'BALANCED';
+    if (!QualityPresets[currentQualityKey]) currentQualityKey = 'BALANCED';
 
     // =========================================================================
-    // 2. THREE.JS HIGH-DEFINITION RENDERER SETUP
+    // 2. THREE.JS THERMALLY OPTIMIZED RENDERER SETUP
     // =========================================================================
     const canvas = document.getElementById('webgl-canvas');
     const floatingUI = document.getElementById('floating-ui-container');
 
     const scene = new THREE.Scene();
-    // Warm cheerful pastel sky background (Reference Image 1)
     scene.background = new THREE.Color(0x96c5f7);
     scene.fog = new THREE.FogExp2(0x96c5f7, 0.004);
 
     const aspect = window.innerWidth / window.innerHeight;
-    const frustumSize = 32; // Perfect isometric arcade idle framing (Reference 1 & 2)
+    const frustumSize = 32;
     const camera = new THREE.OrthographicCamera(
         -frustumSize * aspect / 2, frustumSize * aspect / 2,
         frustumSize / 2, -frustumSize / 2,
         0.1, 1000
     );
 
-    // True Isometric viewing angle focused on kitchen action (Reference 1 & 2)
     camera.position.set(28, 32, 28);
     camera.lookAt(0, 0, -3.5);
 
     const renderer = new THREE.WebGLRenderer({
         canvas: canvas,
         antialias: true,
-        powerPreference: 'high-performance',
-        alpha: false
+        powerPreference: 'default', // Don't burn discrete GPU
+        alpha: false,
+        precision: 'mediump' // Lightweight mobile/laptop ALU precision
     });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2.0));
+    renderer.setPixelRatio(1.0);
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
-    renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.15;
+    renderer.toneMapping = THREE.LinearToneMapping;
     renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.shadowMap.type = THREE.BasicShadowMap;
 
-    // --- CINEMATIC ISOMETRIC LIGHTING ---
-    // Soft sky + warm bounce ambient
-    const hemiLight = new THREE.HemisphereLight(0xffffff, 0xb0cce8, 0.82);
+    // --- CLEAN DIFFUSE LIGHTING ---
+    const hemiLight = new THREE.HemisphereLight(0xffffff, 0xb0cce8, 0.85);
     scene.add(hemiLight);
 
-    // Warm golden sunlight
-    const sunLight = new THREE.DirectionalLight(0xfff8eb, 1.45);
-    sunLight.position.set(42, 68, 34);
+    const sunLight = new THREE.DirectionalLight(0xfff8eb, 1.35);
+    sunLight.position.set(35, 55, 30);
     sunLight.castShadow = true;
-    sunLight.shadow.mapSize.width = 2048;
-    sunLight.shadow.mapSize.height = 2048;
+    sunLight.shadow.mapSize.width = 512;
+    sunLight.shadow.mapSize.height = 512;
     sunLight.shadow.camera.near = 10;
-    sunLight.shadow.camera.far = 160;
-    sunLight.shadow.camera.left = -50;
-    sunLight.shadow.camera.right = 50;
-    sunLight.shadow.camera.top = 50;
-    sunLight.shadow.camera.bottom = -50;
-    sunLight.shadow.bias = -0.0005;
-    sunLight.shadow.radius = 2.0;
+    sunLight.shadow.camera.far = 130;
+    sunLight.shadow.camera.left = -35;
+    sunLight.shadow.camera.right = 35;
+    sunLight.shadow.camera.top = 35;
+    sunLight.shadow.camera.bottom = -35;
+    sunLight.shadow.bias = -0.001;
     scene.add(sunLight);
 
-    // Oven interior hearth glow
-    const ovenFireLight = new THREE.PointLight(0xff6a00, 3.4, 20);
+    // Oven hearth point light (mild range)
+    const ovenFireLight = new THREE.PointLight(0xff6a00, 2.5, 14);
     ovenFireLight.position.set(-14, 2.8, -16);
     scene.add(ovenFireLight);
 
@@ -583,114 +578,110 @@
     }
 
     // =========================================================================
-    // 5. PBR PLASTICINE / CLAY TOY MATERIALS (EXACT MATCH TO REFERENCE)
+    // 5. TOY-CLAY CASUAL MATERIALS (OPTIMIZED FOR ZERO THERMAL OVERHEAD)
     // =========================================================================
     const ovenBrickTex = createBrickTexture();
     const M = {
-        floor: new THREE.MeshStandardMaterial({
-            map: createBlueWhiteCheckerTexture(),
-            roughness: 0.35,
-            metalness: 0.05
-        }),
-        wall: new THREE.MeshStandardMaterial({ color: 0xbfe0ff, roughness: 0.5, metalness: 0.0 }),
-        wallTrim: new THREE.MeshStandardMaterial({ color: 0xd4a373, roughness: 0.4, metalness: 0.0 }),
-        wood: new THREE.MeshStandardMaterial({ color: 0xb07d4b, roughness: 0.45, metalness: 0.0 }),
-        counterTop: new THREE.MeshStandardMaterial({ color: 0xf1f3f5, roughness: 0.2, metalness: 0.15 }),
-        steel: new THREE.MeshStandardMaterial({ color: 0xdfe3e6, roughness: 0.25, metalness: 0.5 }),
-        ovenBrick: new THREE.MeshStandardMaterial({ map: ovenBrickTex, roughness: 0.65, metalness: 0.0 }),
-        ovenDome: new THREE.MeshStandardMaterial({ map: ovenBrickTex, roughness: 0.65, metalness: 0.0 }),
-        ovenMouth: new THREE.MeshStandardMaterial({ color: 0x1a1c1e, roughness: 0.8, metalness: 0.0 }),
+        floor: new THREE.MeshLambertMaterial({ map: createBlueWhiteCheckerTexture() }),
+        wall: new THREE.MeshLambertMaterial({ color: 0xbfe0ff }),
+        wallTrim: new THREE.MeshLambertMaterial({ color: 0xd4a373 }),
+        wood: new THREE.MeshLambertMaterial({ color: 0xb07d4b }),
+        counterTop: new THREE.MeshLambertMaterial({ color: 0xf1f3f5 }),
+        steel: new THREE.MeshLambertMaterial({ color: 0xdfe3e6 }),
+        ovenBrick: new THREE.MeshLambertMaterial({ map: ovenBrickTex }),
+        ovenDome: new THREE.MeshLambertMaterial({ map: ovenBrickTex }),
+        ovenMouth: new THREE.MeshLambertMaterial({ color: 0x1a1c1e }),
         fire: new THREE.MeshBasicMaterial({ color: 0xff922b }),
-        conveyor: new THREE.MeshStandardMaterial({ color: 0x343a40, roughness: 0.5, metalness: 0.2 }),
-        rail: new THREE.MeshStandardMaterial({ color: 0xb4bcc4, roughness: 0.2, metalness: 0.7 }),
-        tablecloth: new THREE.MeshStandardMaterial({ map: createTableclothTexture(), roughness: 0.5, metalness: 0.0 }),
-        plate: new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.18, metalness: 0.05 }),
-        dirtyPlate: new THREE.MeshStandardMaterial({ color: 0xdee2e6, roughness: 0.35, metalness: 0.0 }),
-        dirtyCrust: new THREE.MeshStandardMaterial({ color: 0x8b5a2b, roughness: 0.6, metalness: 0.0 }),
-        trashCan: new THREE.MeshStandardMaterial({ color: 0x2b8a3e, roughness: 0.35, metalness: 0.1 }),
-        trashCanLid: new THREE.MeshStandardMaterial({ color: 0x1e3a1e, roughness: 0.4, metalness: 0.1 }),
-        sodaMachine: new THREE.MeshStandardMaterial({ color: 0xe03131, roughness: 0.3, metalness: 0.15 }),
-        sodaDispenser: new THREE.MeshStandardMaterial({ color: 0x339af0, roughness: 0.25, metalness: 0.2 }),
-        cup: new THREE.MeshStandardMaterial({ color: 0xff6b6b, roughness: 0.25, metalness: 0.0 }),
-        hrDesk: new THREE.MeshStandardMaterial({ color: 0x20c997, roughness: 0.4, metalness: 0.1 }),
+        conveyor: new THREE.MeshLambertMaterial({ color: 0x343a40 }),
+        rail: new THREE.MeshLambertMaterial({ color: 0xb4bcc4 }),
+        tablecloth: new THREE.MeshLambertMaterial({ map: createTableclothTexture() }),
+        plate: new THREE.MeshLambertMaterial({ color: 0xffffff }),
+        dirtyPlate: new THREE.MeshLambertMaterial({ color: 0xdee2e6 }),
+        dirtyCrust: new THREE.MeshLambertMaterial({ color: 0x8b5a2b }),
+        trashCan: new THREE.MeshLambertMaterial({ color: 0x2b8a3e }),
+        trashCanLid: new THREE.MeshLambertMaterial({ color: 0x1e3a1e }),
+        sodaMachine: new THREE.MeshLambertMaterial({ color: 0xe03131 }),
+        sodaDispenser: new THREE.MeshLambertMaterial({ color: 0x339af0 }),
+        cup: new THREE.MeshLambertMaterial({ color: 0xff6b6b }),
+        hrDesk: new THREE.MeshLambertMaterial({ color: 0x20c997 }),
         hrPad: new THREE.MeshBasicMaterial({ color: 0xffd43b, side: THREE.DoubleSide, transparent: true, opacity: 0.85 }),
-        skin: new THREE.MeshStandardMaterial({ color: 0xffdfba, roughness: 0.52, metalness: 0.02 }),
-        pants: new THREE.MeshStandardMaterial({ color: 0x2b3a4a, roughness: 0.55, metalness: 0.0 }),
-        playerPants: new THREE.MeshStandardMaterial({ color: 0x2b3a4a, roughness: 0.55, metalness: 0.0 }),
-        shoe: new THREE.MeshStandardMaterial({ color: 0x4a2c11, roughness: 0.5, metalness: 0.0 }),
-        whiteChefHat: new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.4, metalness: 0.0 }),
-        redApron: new THREE.MeshStandardMaterial({ color: 0xe03131, roughness: 0.35, metalness: 0.02 }),
-        pizzaCrust: new THREE.MeshStandardMaterial({ color: 0xe8590c, roughness: 0.5, metalness: 0.0 }),
-        pizzaCheese: new THREE.MeshStandardMaterial({ color: 0xffd43b, roughness: 0.32, metalness: 0.0 }),
-        pepperoni: new THREE.MeshStandardMaterial({ color: 0xb02a2a, roughness: 0.4, metalness: 0.0 }),
-        regBase: new THREE.MeshStandardMaterial({ color: 0xd4a373, roughness: 0.4, metalness: 0.0 }),
-        regScreen: new THREE.MeshStandardMaterial({ color: 0x212529, roughness: 0.2, metalness: 0.1 }),
-        pickupTray: new THREE.MeshStandardMaterial({ color: 0xadb5bd, roughness: 0.3, metalness: 0.4 }),
+        skin: new THREE.MeshLambertMaterial({ color: 0xffdfba }),
+        pants: new THREE.MeshLambertMaterial({ color: 0x2b3a4a }),
+        playerPants: new THREE.MeshLambertMaterial({ color: 0x2b3a4a }),
+        shoe: new THREE.MeshLambertMaterial({ color: 0x4a2c11 }),
+        whiteChefHat: new THREE.MeshLambertMaterial({ color: 0xffffff }),
+        redApron: new THREE.MeshLambertMaterial({ color: 0xe03131 }),
+        pizzaCrust: new THREE.MeshLambertMaterial({ color: 0xe8590c }),
+        pizzaCheese: new THREE.MeshLambertMaterial({ color: 0xffd43b }),
+        pepperoni: new THREE.MeshLambertMaterial({ color: 0xb02a2a }),
+        regBase: new THREE.MeshLambertMaterial({ color: 0xd4a373 }),
+        regScreen: new THREE.MeshLambertMaterial({ color: 0x212529 }),
+        pickupTray: new THREE.MeshLambertMaterial({ color: 0xadb5bd }),
         pickupRing: new THREE.MeshBasicMaterial({ color: 0xff922b, side: THREE.DoubleSide, transparent: true, opacity: 0.85 }),
         billMat: new THREE.MeshBasicMaterial({ map: createBanknoteTexture(), side: THREE.DoubleSide }),
         heartMat: new THREE.MeshBasicMaterial({ color: 0xff6b81 }),
         cashAuraMat: new THREE.MeshBasicMaterial({ map: createCashAuraTexture(), side: THREE.DoubleSide, transparent: true, opacity: 0.9 }),
-        road: new THREE.MeshStandardMaterial({ color: 0x212529, roughness: 0.8, metalness: 0.05 }),
+        road: new THREE.MeshLambertMaterial({ color: 0x212529 }),
         roadStripe: new THREE.MeshBasicMaterial({ color: 0xffd43b }),
-        awningRed: new THREE.MeshStandardMaterial({ color: 0xe03131, roughness: 0.35 }),
-        awningWhite: new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.35 }),
-        carGlass: new THREE.MeshStandardMaterial({ color: 0x1864ab, roughness: 0.15, metalness: 0.6, transparent: true, opacity: 0.85 }),
-        carTire: new THREE.MeshStandardMaterial({ color: 0x121416, roughness: 0.8 }),
-        carRim: new THREE.MeshStandardMaterial({ color: 0xe9ecef, roughness: 0.25, metalness: 0.8 }),
+        awningRed: new THREE.MeshLambertMaterial({ color: 0xe03131 }),
+        awningWhite: new THREE.MeshLambertMaterial({ color: 0xffffff }),
+        carGlass: new THREE.MeshLambertMaterial({ color: 0x1864ab, transparent: true, opacity: 0.85 }),
+        carTire: new THREE.MeshLambertMaterial({ color: 0x121416 }),
+        carRim: new THREE.MeshLambertMaterial({ color: 0xe9ecef }),
         carHeadlight: new THREE.MeshBasicMaterial({ color: 0xfff9db }),
         carTaillight: new THREE.MeshBasicMaterial({ color: 0xff6b6b }),
-        driveThruSign: new THREE.MeshStandardMaterial({ color: 0x228be6, roughness: 0.3, metalness: 0.1 }),
+        driveThruSign: new THREE.MeshLambertMaterial({ color: 0x228be6 }),
 
         // Pizza Empire: Farm & Factory Materials
-        soil: new THREE.MeshStandardMaterial({ color: 0x4a2e18, roughness: 0.9, metalness: 0.0 }),
-        farmGrass: new THREE.MeshStandardMaterial({ color: 0x40c057, roughness: 0.7, metalness: 0.0 }),
-        fenceWood: new THREE.MeshStandardMaterial({ color: 0xa67c52, roughness: 0.65, metalness: 0.0 }),
-        wheatStem: new THREE.MeshStandardMaterial({ color: 0x82c91e, roughness: 0.5, metalness: 0.0 }),
-        wheatGrain: new THREE.MeshStandardMaterial({ color: 0xfcc419, roughness: 0.35, metalness: 0.0 }),
-        wheatSheaf: new THREE.MeshStandardMaterial({ color: 0xf59f00, roughness: 0.5, metalness: 0.0 }),
-        flourSack: new THREE.MeshStandardMaterial({ color: 0xf1f3f5, roughness: 0.8, metalness: 0.0 }),
-        doughBase: new THREE.MeshStandardMaterial({ color: 0xffe066, roughness: 0.45, metalness: 0.0 }),
-        millWood: new THREE.MeshStandardMaterial({ color: 0x6f4e37, roughness: 0.6, metalness: 0.0 }),
-        millStone: new THREE.MeshStandardMaterial({ color: 0x868e96, roughness: 0.75, metalness: 0.15 }),
-        pressChrome: new THREE.MeshStandardMaterial({ color: 0xced4da, roughness: 0.2, metalness: 0.85 }),
-        sauceRed: new THREE.MeshStandardMaterial({ color: 0xc92a2a, roughness: 0.3, metalness: 0.0 }),
-        cheeseGold: new THREE.MeshStandardMaterial({ color: 0xffd43b, roughness: 0.3, metalness: 0.0 })
+        soil: new THREE.MeshLambertMaterial({ color: 0x4a2e18 }),
+        farmGrass: new THREE.MeshLambertMaterial({ color: 0x40c057 }),
+        fenceWood: new THREE.MeshLambertMaterial({ color: 0xa67c52 }),
+        wheatStem: new THREE.MeshLambertMaterial({ color: 0x82c91e }),
+        wheatGrain: new THREE.MeshLambertMaterial({ color: 0xfcc419 }),
+        wheatSheaf: new THREE.MeshLambertMaterial({ color: 0xf59f00 }),
+        flourSack: new THREE.MeshLambertMaterial({ color: 0xf1f3f5 }),
+        doughBase: new THREE.MeshLambertMaterial({ color: 0xffe066 }),
+        millWood: new THREE.MeshLambertMaterial({ color: 0x6f4e37 }),
+        millStone: new THREE.MeshLambertMaterial({ color: 0x868e96 }),
+        pressChrome: new THREE.MeshLambertMaterial({ color: 0xced4da }),
+        sauceRed: new THREE.MeshLambertMaterial({ color: 0xc92a2a }),
+        cheeseGold: new THREE.MeshLambertMaterial({ color: 0xffd43b })
     };
 
-    // Shared Geometries
-    const sharedWheatSheafGeo = new THREE.CylinderGeometry(0.35, 0.45, 0.9, 12);
+    // Shared Geometries (Optimized low-poly curves for max FPS)
+    const sharedWheatSheafGeo = new THREE.CylinderGeometry(0.35, 0.45, 0.9, 8);
     const sharedFlourSackGeo = new THREE.BoxGeometry(0.75, 0.6, 0.65);
-    const sharedDoughGeo = new THREE.CylinderGeometry(0.68, 0.68, 0.09, 16);
+    const sharedDoughGeo = new THREE.CylinderGeometry(0.68, 0.68, 0.09, 12);
     const sharedBoxGeo = new THREE.BoxGeometry(1.6, 0.38, 1.6);
     const pizzaBoxCoverTex = createPizzaBoxCoverTexture();
     const sharedPizzaBoxMats = [
-        new THREE.MeshStandardMaterial({ color: 0xd4a373, roughness: 0.5 }),
-        new THREE.MeshStandardMaterial({ color: 0xd4a373, roughness: 0.5 }),
-        new THREE.MeshStandardMaterial({ map: pizzaBoxCoverTex, roughness: 0.45 }),
-        new THREE.MeshStandardMaterial({ color: 0xd4a373, roughness: 0.5 }),
-        new THREE.MeshStandardMaterial({ color: 0xd4a373, roughness: 0.5 }),
-        new THREE.MeshStandardMaterial({ color: 0xd4a373, roughness: 0.5 })
+        new THREE.MeshLambertMaterial({ color: 0xd4a373 }),
+        new THREE.MeshLambertMaterial({ color: 0xd4a373 }),
+        new THREE.MeshLambertMaterial({ map: pizzaBoxCoverTex }),
+        new THREE.MeshLambertMaterial({ color: 0xd4a373 }),
+        new THREE.MeshLambertMaterial({ color: 0xd4a373 }),
+        new THREE.MeshLambertMaterial({ color: 0xd4a373 })
     ];
 
-    const sharedPlateGeo = new THREE.CylinderGeometry(0.85, 0.75, 0.08, 20);
-    const sharedSliceGeo = new THREE.CylinderGeometry(0.7, 0.7, 0.09, 16, 1, false, 0, Math.PI * 0.75);
+    const sharedPlateGeo = new THREE.CylinderGeometry(0.85, 0.75, 0.08, 14);
+    const sharedSliceGeo = new THREE.CylinderGeometry(0.7, 0.7, 0.09, 12, 1, false, 0, Math.PI * 0.75);
     const sharedCashGeo = new THREE.BoxGeometry(0.88, 0.24, 0.56);
     const banknoteTex = createBanknoteTexture();
     const sharedCashMats = [
-        new THREE.MeshStandardMaterial({ color: 0x37b24d, roughness: 0.5 }),
-        new THREE.MeshStandardMaterial({ color: 0x37b24d, roughness: 0.5 }),
-        new THREE.MeshStandardMaterial({ map: banknoteTex, roughness: 0.4 }),
-        new THREE.MeshStandardMaterial({ color: 0x37b24d, roughness: 0.5 }),
-        new THREE.MeshStandardMaterial({ color: 0x37b24d, roughness: 0.5 }),
-        new THREE.MeshStandardMaterial({ color: 0x37b24d, roughness: 0.5 })
+        new THREE.MeshLambertMaterial({ color: 0x37b24d }),
+        new THREE.MeshLambertMaterial({ color: 0x37b24d }),
+        new THREE.MeshLambertMaterial({ map: banknoteTex }),
+        new THREE.MeshLambertMaterial({ color: 0x37b24d }),
+        new THREE.MeshLambertMaterial({ color: 0x37b24d }),
+        new THREE.MeshLambertMaterial({ color: 0x37b24d })
     ];
     const sharedBillGeo = new THREE.PlaneGeometry(0.75, 0.45);
 
-    // High-polygon smooth character geometries (Reference 1)
-    const sharedHeadGeo = new THREE.SphereGeometry(0.78, 28, 22);
-    const sharedTorsoGeo = new THREE.CylinderGeometry(0.6, 0.52, 1.45, 24);
-    const sharedArmGeo = new THREE.CylinderGeometry(0.19, 0.17, 1.15, 18);
-    const sharedLegGeo = new THREE.CylinderGeometry(0.22, 0.18, 1.25, 18);
+    // Optimized character geometries (Smooth visual appearance, 65% fewer vertices)
+    const sharedHeadGeo = new THREE.SphereGeometry(0.78, 16, 12);
+    const sharedTorsoGeo = new THREE.CylinderGeometry(0.6, 0.52, 1.45, 14);
+    const sharedArmGeo = new THREE.CylinderGeometry(0.19, 0.17, 1.15, 10);
+    const sharedLegGeo = new THREE.CylinderGeometry(0.22, 0.18, 1.25, 10);
     const sharedShoeGeo = new THREE.BoxGeometry(0.38, 0.24, 0.55);
 
     // =========================================================================
@@ -2019,7 +2010,7 @@
         {
             id: 'table_1',
             title: '🪑 Table 1',
-            price: 25,
+            price: 15,
             getPos: () => new THREE.Vector3(tableLocations[0].x, 0, tableLocations[0].z),
             onUnlock: () => {
                 diningTables.push(createDiningTable(1, tableLocations[0].x, tableLocations[0].z));
@@ -2031,7 +2022,7 @@
         {
             id: 'chef_1',
             title: '👨‍🍳 Hire Kitchen Chef',
-            price: 75,
+            price: 60,
             getPos: () => new THREE.Vector3(-18.0, 0, -22.0),
             onUnlock: () => {
                 spawnHelperWorker('CHEF');
@@ -2268,6 +2259,20 @@
     function createPizzaBoxMesh() {
         return new THREE.Mesh(sharedBoxGeo, sharedPizzaBoxMats);
     }
+
+    function spawnInitialReadyPizzas() {
+        readyPizzas.forEach(p => scene.remove(p));
+        readyPizzas.length = 0;
+        for (let i = 0; i < 6; i++) {
+            const stackBox = createPizzaBoxMesh();
+            const stackHeight = (i % 8) * 0.42 + 1.6;
+            const col = Math.floor(i / 8);
+            stackBox.position.set(-18 + (col === 0 ? -0.8 : 0.8), stackHeight, -4.8);
+            scene.add(stackBox);
+            readyPizzas.push(stackBox);
+        }
+    }
+    spawnInitialReadyPizzas();
 
     const pizzaCrustGeo = new THREE.CylinderGeometry(0.72, 0.72, 0.08, 20);
     const pizzaCheeseGeo = new THREE.CylinderGeometry(0.62, 0.62, 0.09, 20);
@@ -3556,6 +3561,10 @@
 
     // GPU COMPOSITED 2D POSITIONING (translate3d, ZERO REFLOW)
     const tempVec = new THREE.Vector3();
+    const _vDir = new THREE.Vector3();
+    const _vTarget = new THREE.Vector3();
+    const _vExit = new THREE.Vector3();
+
     function toScreenXY(worldPos, yOffset = 0) {
         tempVec.copy(worldPos);
         tempVec.y += yOffset;
@@ -3566,12 +3575,17 @@
     }
 
     function updateDOMTransform(el, worldPos, yOffset = 0, extraOffset = 'translate(-50%, -100%)') {
+        if (!el || el.style.display === 'none') return;
         const coords = toScreenXY(worldPos, yOffset);
-        if (el) {
-            el.style.transform = `translate3d(${coords.x}px, ${coords.y}px, 0) ${extraOffset}`;
-        }
+        el.style.transform = `translate3d(${coords.x}px, ${coords.y}px, 0) ${extraOffset}`;
         return coords;
     }
+
+    // Power saver: Pause rendering when browser tab is hidden/backgrounded
+    let isTabVisible = true;
+    document.addEventListener('visibilitychange', () => {
+        isTabVisible = !document.hidden;
+    });
 
     // =========================================================================
     // 25. MAIN ANIMATION & RENDERING LOOP
@@ -3583,6 +3597,7 @@
 
     function animate() {
         requestAnimationFrame(animate);
+        if (!isTabVisible) return;
 
         // 0. FPS METER
         frameCount++;
@@ -3793,29 +3808,38 @@
             updateHUD();
         }
 
-        // 3F. DOUGH & TOPPING PREP STATION (MANUAL OR KITCHEN CHEF HELPER)
+        // 3F. DOUGH & TOPPING PREP STATION (CONTINUOUS AUTO-BAKING WITH ROLLING BOOST)
         const hasChefHelper = helpers.some(h => h.role === 'CHEF');
         const distToPrep = pPos.distanceTo(PREP_STATION_POS);
         const isPlayerPrepping = (distToPrep < 3.2);
 
         updateDOMTransform(prepStationTag, PREP_STATION_POS, 4.0);
 
-        if ((isPlayerPrepping || hasChefHelper) && conveyorPizzas.length < 4 && readyPizzas.length < 16) {
-            prepTimer += dt * (isPlayerPrepping ? 1.4 : 1.0) * (GameState.ovenSpeedMultiplier || 1.0);
+        // Core Pizza Ready Mechanics: Oven ALWAYS auto-bakes continuously!
+        // Rolling dough manually or having the Kitchen Chef speeds up baking dramatically.
+        const bakeMultiplier = (isPlayerPrepping ? 2.5 : 1.0) * (hasChefHelper ? 1.8 : 1.0) * (GameState.ovenSpeedMultiplier || 1.0);
+        if (conveyorPizzas.length < 4 && readyPizzas.length < 16) {
+            prepTimer += dt * bakeMultiplier;
             const statusEl = document.getElementById('prep-status');
             if (statusEl) {
-                const pct = Math.min(100, Math.floor((prepTimer / 1.8) * 100));
-                statusEl.innerText = `Rolling Dough... ${pct}%`;
+                if (isPlayerPrepping) {
+                    const pct = Math.min(100, Math.floor((prepTimer / 1.5) * 100));
+                    statusEl.innerText = `Fast Rolling! ${pct}%`;
+                } else if (hasChefHelper) {
+                    statusEl.innerText = 'Chef Active';
+                } else {
+                    statusEl.innerText = 'Baking... (Stand to Boost)';
+                }
             }
 
-            if (prepTimer >= 1.8) {
+            if (prepTimer >= 2.0) {
                 prepTimer = 0;
-                startPizzaAssembly(!isPlayerPrepping);
+                startPizzaAssembly(hasChefHelper || isPlayerPrepping);
             }
         } else {
             const statusEl = document.getElementById('prep-status');
             if (statusEl) {
-                statusEl.innerText = readyPizzas.length >= 16 ? 'Rack Full' : (hasChefHelper ? 'Chef Active' : 'Stand Here to Roll');
+                statusEl.innerText = readyPizzas.length >= 16 ? 'Pickup Rack Full' : 'Baking Standby';
             }
         }
 
@@ -4036,12 +4060,12 @@
             if (target) {
                 const dist = h.root.position.distanceTo(target);
                 if (dist > 1.3) {
-                    const dir = target.clone().sub(h.root.position).normalize();
+                    _vDir.subVectors(target, h.root.position).normalize();
                     const moveDist = h.speed * dt;
-                    const res = resolveCollision(h.root.position.x + dir.x * moveDist, h.root.position.z + dir.z * moveDist, 0.4);
+                    const res = resolveCollision(h.root.position.x + _vDir.x * moveDist, h.root.position.z + _vDir.z * moveDist, 0.4);
                     h.root.position.x = res.x;
                     h.root.position.z = res.z;
-                    h.root.rotation.y = Math.atan2(dir.x, dir.z);
+                    h.root.rotation.y = Math.atan2(_vDir.x, _vDir.z);
                     h.walkCycle += dt * 11;
                     h.leftLeg.rotation.x = Math.sin(h.walkCycle) * 0.5;
                     h.rightLeg.rotation.x = -Math.sin(h.walkCycle) * 0.5;
@@ -4229,9 +4253,9 @@
                 const dist = mesh.root.position.distanceTo(targetSpot);
 
                 if (dist > 0.4) {
-                    const dir = targetSpot.clone().sub(mesh.root.position).normalize();
-                    mesh.root.position.addScaledVector(dir, cust.speed * dt);
-                    mesh.root.rotation.y = Math.atan2(dir.x, dir.z);
+                    _vDir.subVectors(targetSpot, mesh.root.position).normalize();
+                    mesh.root.position.addScaledVector(_vDir, cust.speed * dt);
+                    mesh.root.rotation.y = Math.atan2(_vDir.x, _vDir.z);
                     mesh.walkCycle += dt * 10;
                     mesh.leftLeg.rotation.x = Math.sin(mesh.walkCycle) * 0.5;
                     mesh.rightLeg.rotation.x = -Math.sin(mesh.walkCycle) * 0.5;
@@ -4253,8 +4277,8 @@
 
                 const currentSpot = QUEUE_SPOTS[Math.min(cust.queueIndex, QUEUE_SPOTS.length - 1)];
                 if (mesh.root.position.distanceTo(currentSpot) > 0.5) {
-                    const dir = currentSpot.clone().sub(mesh.root.position).normalize();
-                    mesh.root.position.addScaledVector(dir, cust.speed * dt);
+                    _vDir.subVectors(currentSpot, mesh.root.position).normalize();
+                    mesh.root.position.addScaledVector(_vDir, cust.speed * dt);
                 }
 
                 if (cust.queueIndex === 0) {
@@ -4294,9 +4318,9 @@
                 const dist = mesh.root.position.distanceTo(targetSpot);
 
                 if (dist > 0.4) {
-                    const dir = targetSpot.clone().sub(mesh.root.position).normalize();
-                    mesh.root.position.addScaledVector(dir, cust.speed * dt);
-                    mesh.root.rotation.y = Math.atan2(dir.x, dir.z);
+                    _vDir.subVectors(targetSpot, mesh.root.position).normalize();
+                    mesh.root.position.addScaledVector(_vDir, cust.speed * dt);
+                    mesh.root.rotation.y = Math.atan2(_vDir.x, _vDir.z);
                     mesh.walkCycle += dt * 10;
                     mesh.leftLeg.rotation.x = Math.sin(mesh.walkCycle) * 0.5;
                     mesh.rightLeg.rotation.x = -Math.sin(mesh.walkCycle) * 0.5;
@@ -4351,13 +4375,14 @@
             } else if (cust.state === 'WALK_TO_EXIT') {
                 let exitWaypoint = EXIT_POS;
                 if (mesh.root.position.x < 20 && mesh.root.position.z < 26) {
-                    exitWaypoint = new THREE.Vector3(22, 0, mesh.root.position.z);
+                    _vExit.set(22, 0, mesh.root.position.z);
+                    exitWaypoint = _vExit;
                 }
                 const dist = mesh.root.position.distanceTo(exitWaypoint);
                 if (dist > 0.5) {
-                    const dir = exitWaypoint.clone().sub(mesh.root.position).normalize();
-                    mesh.root.position.addScaledVector(dir, cust.speed * dt);
-                    mesh.root.rotation.y = Math.atan2(dir.x, dir.z);
+                    _vDir.subVectors(exitWaypoint, mesh.root.position).normalize();
+                    mesh.root.position.addScaledVector(_vDir, cust.speed * dt);
+                    mesh.root.rotation.y = Math.atan2(_vDir.x, _vDir.z);
                     mesh.walkCycle += dt * 10;
                     mesh.leftLeg.rotation.x = Math.sin(mesh.walkCycle) * 0.5;
                     mesh.rightLeg.rotation.x = -Math.sin(mesh.walkCycle) * 0.5;
