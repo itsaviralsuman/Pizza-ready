@@ -1159,5 +1159,86 @@ canvas#webgl-canvas {
     color: #fff9db !important;
 }
 
+/* =========================================================================
+   HOW TO PLAY / CHEF GUIDE MODAL STYLES (PLAY STORE POLISH)
+   ========================================================================= */
+.guide-box {
+    max-width: 680px;
+    width: 95%;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.guide-image-container {
+    width: 100%;
+    border-radius: 16px;
+    overflow: hidden;
+    margin-bottom: 14px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+    border: 3px solid #ff922b;
+}
+
+.guide-infographic-img {
+    width: 100%;
+    height: auto;
+    display: block;
+    object-fit: cover;
+}
+
+.guide-steps-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 10px;
+    margin-top: 6px;
+}
+
+.guide-step-card {
+    background: #ffffff;
+    border: 2px solid #dee2e6;
+    border-radius: 12px;
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.guide-step-card .step-num {
+    display: inline-block;
+    align-self: flex-start;
+    background: #e03131;
+    color: #ffffff;
+    font-size: 10px;
+    font-weight: 800;
+    padding: 2px 8px;
+    border-radius: 8px;
+    text-transform: uppercase;
+}
+
+.guide-step-card h4 {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 800;
+    color: #212529;
+}
+
+.guide-step-card p {
+    margin: 0;
+    font-size: 11px;
+    color: #495057;
+    line-height: 1.35;
+}
+
+.badge-icon-circle.guide-icon {
+    background: #7950f2;
+}
+
+@media (max-width: 600px) {
+    .guide-steps-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+
 
 

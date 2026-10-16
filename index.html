@@ -2,11 +2,20 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Pizza Ready! - 3D Idle Tycoon</title>
+    <meta name="description" content="Build, bake, and expand your 3D pizza restaurant empire in Pizza Ready! 3D Idle Tycoon.">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/jpeg" href="icon-192.jpg">
+    <link rel="apple-touch-icon" href="icon-192.jpg">
+    <meta name="theme-color" content="#e03131">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <link rel="stylesheet" href="style.css?v=3.1">
+    <link rel="stylesheet" href="style.css?v=3.4">
 </head>
 <body>
     <div id="game-container">
@@ -70,7 +79,7 @@
                 </div>
             </div>
 
-            <!-- RIGHT ACTION BUTTONS: CLOUD SAVE, UPGRADES, FPS, SETTINGS -->
+            <!-- RIGHT ACTION BUTTONS: CLOUD SAVE, UPGRADES, GUIDE, FRANCHISE, FPS, SETTINGS -->
             <div class="hud-right">
                 <!-- EMAIL CLOUD SAVE BUTTON -->
                 <button class="pill-badge cloud-btn" id="cloud-save-btn" title="Cloud Save & Sync with Email">
@@ -83,6 +92,12 @@
                 <button class="pill-badge hr-btn" id="hr-btn" title="Restaurant & Player Upgrades">
                     <div class="badge-icon-circle hr-icon">⭐</div>
                     <span class="badge-text">Upgrades</span>
+                </button>
+
+                <!-- HOW TO PLAY / GUIDE BUTTON -->
+                <button class="pill-badge guide-btn" id="guide-btn" title="How to Play - Chef Guide">
+                    <div class="badge-icon-circle guide-icon">📖</div>
+                    <span class="badge-text">Guide</span>
                 </button>
 
                 <!-- FRANCHISE EMPIRE HUB BUTTON -->
@@ -343,6 +358,44 @@
         </div>
 
         <!-- ============================================== -->
+        <!-- HOW TO PLAY / STEP-BY-STEP CHEF GUIDE MODAL -->
+        <!-- ============================================== -->
+        <div class="modal-overlay" id="guide-modal">
+            <div class="modal-box guide-box">
+                <div class="modal-header">
+                    <h2 class="modal-title">📖 Chef's Pizza Master Guide</h2>
+                    <button class="modal-close-icon" id="close-guide-x">&times;</button>
+                </div>
+                <div class="guide-image-container">
+                    <img src="pizza_process_guide.jpg" alt="Pizza Process Guide" class="guide-infographic-img">
+                </div>
+                <div class="guide-steps-grid">
+                    <div class="guide-step-card">
+                        <span class="step-num">Step 1</span>
+                        <h4>Dough & Prep</h4>
+                        <p>Roll fresh dough bases and spread sauce & cheese at the kitchen station.</p>
+                    </div>
+                    <div class="guide-step-card">
+                        <span class="step-num">Step 2</span>
+                        <h4>Turbo Baking</h4>
+                        <p>Pizzas glide on the conveyor and bake with hot bubbling mozzarella.</p>
+                    </div>
+                    <div class="guide-step-card">
+                        <span class="step-num">Step 3</span>
+                        <h4>Packing & Counter</h4>
+                        <p>Stack boxes, stock heated shelf, and serve hungry customers for cash!</p>
+                    </div>
+                    <div class="guide-step-card">
+                        <span class="step-num">Step 4</span>
+                        <h4>Drive-Thru & Empire</h4>
+                        <p>Serve drive-up cars, clean dining tables, and expand to 3 mega branches!</p>
+                    </div>
+                </div>
+                <button class="modal-btn btn-primary full-width" id="close-guide-btn" style="margin-top: 14px;">Let's Bake! 🍕</button>
+            </div>
+        </div>
+
+        <!-- ============================================== -->
         <!-- SETTINGS MODAL -->
         <!-- ============================================== -->
         <div class="modal-overlay" id="settings-modal">
@@ -360,10 +413,11 @@
                         <button class="quality-btn active" id="quality-balanced-btn" type="button">⚡ Balanced</button>
                         <button class="quality-btn" id="quality-high-btn" type="button">💎 High</button>
                     </div>
-                    <div class="quality-hint" id="quality-hint">Optimized 60 FPS for smooth laptop play</div>
+                    <div class="quality-hint" id="quality-hint">Optimized 60 FPS for smooth play</div>
                 </div>
 
                 <button class="modal-btn btn-primary" id="toggle-sound-btn">🔊 Sound: ON</button>
+                <button class="modal-btn btn-secondary" id="toggle-fullscreen-btn">📱 Toggle Fullscreen</button>
                 <button class="modal-btn btn-danger" id="reset-game-btn">🔄 Reset Current Game</button>
                 <button class="modal-btn btn-secondary" id="close-settings-btn">Back to Game</button>
             </div>
@@ -372,8 +426,20 @@
 
     <!-- SCRIPTS -->
     <script src="three.min.js"></script>
-    <script src="audio.js?v=3.2"></script>
-    <script src="game.js?v=3.2"></script>
-    <div style="position:fixed;bottom:8px;right:8px;background:rgba(0,0,0,0.65);color:#22c55e;padding:3px 8px;border-radius:6px;font-size:11px;font-weight:700;font-family:sans-serif;z-index:99999;pointer-events:none;border:1px solid rgba(255,255,255,0.2);">🎮 v3.2 Balanced Tycoon & Fixed Zones</div>
+    <script src="audio.js?v=3.4"></script>
+    <script src="game.js?v=3.4"></script>
+    <script>
+        // PWA Service Worker Registration
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js').then((reg) => {
+                    console.log('✅ Pizza Ready PWA ServiceWorker Registered:', reg.scope);
+                }).catch((err) => {
+                    console.log('ServiceWorker registration skipped:', err);
+                });
+            });
+        }
+    </script>
+    <div style="position:fixed;bottom:8px;right:8px;background:rgba(0,0,0,0.65);color:#22c55e;padding:3px 8px;border-radius:6px;font-size:11px;font-weight:700;font-family:sans-serif;z-index:99999;pointer-events:none;border:1px solid rgba(255,255,255,0.2);">🎮 v3.4 Play Store Edition</div>
 </body>
 </html>

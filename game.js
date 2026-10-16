@@ -3523,6 +3523,36 @@
     closeSettingsBtn.addEventListener('pointerdown', (e) => { e.stopPropagation(); closeSettings(); });
     closeSettingsX.addEventListener('pointerdown', (e) => { e.stopPropagation(); closeSettings(); });
 
+    // Chef's Pizza Master Guide Modal (Play Store Showcase)
+    const guideBtn = document.getElementById('guide-btn');
+    const guideModal = document.getElementById('guide-modal');
+    const closeGuideBtn = document.getElementById('close-guide-btn');
+    const closeGuideX = document.getElementById('close-guide-x');
+
+    function openGuideModal() {
+        if (guideModal) guideModal.style.display = 'flex';
+    }
+    function closeGuideModal() {
+        if (guideModal) guideModal.style.display = 'none';
+    }
+    if (guideBtn) guideBtn.addEventListener('click', openGuideModal);
+    if (closeGuideBtn) closeGuideBtn.addEventListener('click', closeGuideModal);
+    if (closeGuideX) closeGuideX.addEventListener('click', closeGuideModal);
+
+    // Fullscreen Toggle (Mobile Play Store Immersion)
+    const toggleFullscreenBtn = document.getElementById('toggle-fullscreen-btn');
+    if (toggleFullscreenBtn) {
+        toggleFullscreenBtn.addEventListener('click', () => {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(() => {});
+                toggleFullscreenBtn.innerText = '📱 Exit Fullscreen';
+            } else {
+                document.exitFullscreen().catch(() => {});
+                toggleFullscreenBtn.innerText = '📱 Toggle Fullscreen';
+            }
+        });
+    }
+
     // Backdrop click for all modals (clicking anywhere outside the dialog immediately closes it)
     document.querySelectorAll('.modal-overlay').forEach(overlay => {
         overlay.addEventListener('click', (e) => {
@@ -3531,6 +3561,7 @@
                 if (overlay.id === 'upgrades-modal') closeUpgradesModal();
                 if (overlay.id === 'cloud-modal') closeCloudModal();
                 if (overlay.id === 'settings-modal') closeSettings();
+                if (overlay.id === 'guide-modal') closeGuideModal();
             }
         });
     });
@@ -3541,6 +3572,7 @@
             closeUpgradesModal();
             closeCloudModal();
             closeSettings();
+            closeGuideModal();
         }
     });
 

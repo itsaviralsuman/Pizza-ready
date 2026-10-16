@@ -1,0 +1,38 @@
+{
+  "name": "Pizza Ready! - 3D Idle Tycoon",
+  "short_name": "Pizza Ready",
+  "description": "Build, bake, and expand your 3D pizza restaurant empire! Serve customers, hire helpers, and unlock drive-thrus in this authentic arcade idle tycoon.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#121416",
+  "theme_color": "#e03131",
+  "categories": [
+    "games",
+    "arcade",
+    "simulation"
+  ],
+  "icons": [
+    {
+      "src": "icon-192.jpg",
+      "sizes": "192x192",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "pizza_process_guide.jpg",
+      "sizes": "1792x1024",
+      "type": "image/jpeg",
+      "form_factor": "wide",
+      "label": "Step-by-Step Pizza Making & Serving Process"
+    }
+  ]
+}
